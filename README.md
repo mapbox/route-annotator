@@ -39,7 +39,7 @@ cat response.json | node -e '
         }); 
     }); 
     console.log(nodes.join(",")); 
-  });' > nodelist.txt`
+  });' > nodelist.txt
 ```
 
 ## Running the route annotator
@@ -55,7 +55,7 @@ After building, run:
 
 The URL format is:
 
-  http://localhost:5000/nodelist/1,2,3,4,5,6
+  `http://localhost:5000/nodelist/1,2,3,4,5,6`
 
 So, using the node sequence from above, you can query:
 
