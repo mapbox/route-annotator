@@ -36,12 +36,35 @@
 
 #include <boost/iterator/zip_iterator.hpp>
 #include <boost/tuple/tuple.hpp>
-#include <boost/algorithm/string/replace.hpp>
+
+//#include <boost/range/algorithm/adjacent_find.hpp>
+
+#include <boost/geometry.hpp>
+#include <boost/geometry/core/cs.hpp>
+#include <boost/geometry/geometries/point.hpp>
+#include <boost/geometry/index/rtree.hpp>
+//#include <boost/geometry/index/predicates.hpp>
+//#include <boost/geometry/strategies/distance.hpp>
+
+#include <boost/range/adaptor/strided.hpp>
+
+#include <boost/timer/timer.hpp>
 
 
-typedef std::pair<std::uint64_t, std::uint64_t> nodepair_t;
+typedef std::uint64_t nodeid_t;
+
+// Data types for the RTree
+//typedef boost::geometry::model::point<double, 2, boost::geometry::cs::geographic<boost::geometry::degree>> point_t;
+typedef boost::geometry::model::point<double, 2, boost::geometry::cs::spherical_equatorial<boost::geometry::degree>> point_t;
+//typedef boost::geometry::model::point<double, 2, boost::geometry::cs::cartesian> point_t;
+typedef std::pair<point_t, nodeid_t> value_t;
+
+// Data types for our lookup tables
+typedef std::pair<nodeid_t, nodeid_t> nodepair_t;
 typedef std::unordered_map<std::string,std::string> tagmap_t;
 
+// Hash function for node pairs - we store a lot of these, so we want
+// low collision.
 namespace std {
 template <> struct hash<nodepair_t> {
     inline size_t operator()(const nodepair_t &v) const {
@@ -53,16 +76,25 @@ template <> struct hash<nodepair_t> {
 struct Extractor final : osmium::handler::Handler {
 
 
+    std::vector<value_t> coord_node_list;
+
     std::unordered_map<nodepair_t, std::uint32_t> pair_way_map;
     std::unordered_map<std::uint32_t, tagmap_t> way_tag_map;
+
+    std::unique_ptr<boost::geometry::index::rtree<value_t, boost::geometry::index::rstar<8>>> rtree;
+
+    void node(const osmium::Node& node) {
+        point_t p{node.location().lon(), node.location().lat()};
+        coord_node_list.emplace_back(p, node.id());
+    }
 
     void way(const osmium::Way& way) {
 
         // TODO: check if way is interesting (road, highway, etc), there's no need to keep
         // everything....
         const char *oneway = way.tags().get_value_by_key("one_way");
-        bool forward = (!oneway || std::string(oneway) == "yes");
-        bool reverse = (!oneway || std::string(oneway) == "-1");
+        bool forward = (!oneway || std::strcmp(oneway, "yes") == 0);
+        bool reverse = (!oneway || std::strcmp(oneway, "-1") == 0);
         if (way.nodes().size() > 1 && (forward || reverse))
         {
             std::for_each(
@@ -81,6 +113,12 @@ struct Extractor final : osmium::handler::Handler {
             }
             way_tag_map.insert({way.id(),tmp});
         }
+    }
+
+    void finish()
+    {
+        rtree = std::make_unique<boost::geometry::index::rtree<value_t, boost::geometry::index::rstar<8>>>(coord_node_list.begin(), coord_node_list.end());
+        coord_node_list.clear();
     }
 };
 
@@ -108,11 +146,16 @@ int main(int argc, char** argv) try {
   osmium::io::File osmfile{argv[2]};
   osmium::io::Reader fileReader(osmfile, osmium::osm_entity_bits::way | osmium::osm_entity_bits::node);
 
+  std::cerr << "Parsing " << argv[2] << " ... " << std::flush;
   Extractor extractor;
   osmium::apply(fileReader, extractor);
+  std::cerr << "done\n";
+  std::cerr << "Number of node pairs indexed: " << extractor.pair_way_map.size() << "\n";
+  std::cerr << "Number of ways indexed: " << extractor.way_tag_map.size() << "\n";
+  std::cerr << "Constructing RTree ... " << std::flush;
+  extractor.finish();
+  std::cerr << "done\n" << std::flush;
 
-  std::cout << "Number of node pairs indexed: " << extractor.pair_way_map.size() << "\n";
-  std::cout << "Number of ways indexed: " << extractor.way_tag_map.size() << "\n";
 
   // Server listens based on URI (Host, Port)
   web::uri uri{argv[1]};
@@ -127,14 +170,56 @@ int main(int argc, char** argv) try {
     std::fprintf(stderr, "%s\t%s\t%s\n", request.method().c_str(), path.c_str(), query.c_str());
 
     // Parse Coordinates with X3
-    const auto parser = "/nodelist/" >> (boost::spirit::x3::int_) % ",";
-    std::vector<std::uint64_t> nodeids;
+    const auto nodelist_parser = "/nodelist/" >> (boost::spirit::x3::ulong_long) % ",";
+    std::vector<nodeid_t> nodeids;
+    std::vector<double> coordinates;
 
-    if (!parse(begin(path), end(path), parser, nodeids) || nodeids.size() < 2) {
+    if (!parse(begin(path), end(path), nodelist_parser, nodeids) || nodeids.size() < 2) {
+
+        const auto coordlist_parser = "/coordlist/" >> (boost::spirit::x3::double_ >> "," >> boost::spirit::x3::double_ ) % ";";
+
+        if (!parse(begin(path), end(path), coordlist_parser, coordinates) || coordinates.size() < 2) {
+            web::json::value response;
+            response["message"] = web::json::value("Bad request");
+            request.reply(web::http::status_codes::BadRequest,response);
+            return; // Early Exit
+        }
+
+        // Loop over the coordinates, and try to find nearby matches in the rtree
+        // Limit to 2m radius.  If there are multiple matches, take the closest one
+        //boost::geometry::strategy::distance::haversine<double> const haversine(6372795.0);
+        boost::geometry::strategy::distance::haversine<double> const haversine(6372795.0);
+
+        for (std::size_t lonIdx{0}, latIdx{1} ; latIdx < coordinates.size(); lonIdx+=2, latIdx+=2)
+        {
+            point_t pt{coordinates[lonIdx],coordinates[latIdx]};
+
+            std::vector<value_t> results;
+
+            extractor.rtree->query(boost::geometry::index::nearest(pt, 1) && boost::geometry::index::satisfies([&pt, &haversine](value_t const& v) {
+                //return boost::geometry::distance(pt, v.first, haversine) < 2;
+                return true;
+            }), std::back_inserter(results));
+
+            // If we got exactly one hit, append it to our nodeids list
+            if (results.size() == 1) 
+            {
+                nodeids.push_back(results[0].second);
+            } 
+            // otherwise, insert a 0 value, this coordinate didn't match
+            else 
+            {
+                nodeids.push_back(0);
+            }
+        }
+
+    }
+
+    if (nodeids.size() < 2)
+    {
       web::json::value response;
       response["message"] = web::json::value("Bad request");
       request.reply(web::http::status_codes::BadRequest,response);
-      return; // Early Exit
     }
 
     web::json::value response;
@@ -142,7 +227,7 @@ int main(int argc, char** argv) try {
     std::for_each(
         boost::make_zip_iterator(boost::make_tuple(nodeids.cbegin(), nodeids.cbegin()+1)),
         boost::make_zip_iterator(boost::make_tuple(nodeids.cend()-1, nodeids.cend())),
-        [&extractor,&response](boost::tuple<const std::uint64_t, const std::uint64_t> pair) {
+        [&extractor,&response](boost::tuple<const nodeid_t, const nodeid_t> pair) {
             if (extractor.pair_way_map.find(std::make_pair(pair.get<0>(), pair.get<1>())) != extractor.pair_way_map.end())
             {
                 const auto way = extractor.pair_way_map[std::make_pair(pair.get<0>(), pair.get<1>())];
@@ -154,6 +239,7 @@ int main(int argc, char** argv) try {
                 for (const auto &entry : tagmap) {
                     tags[entry.first] = web::json::value(entry.second);
                 }
+
                 response[nodepairstr] = tags;
             }
         }

@@ -19,11 +19,18 @@ OSRM (on the feature/expose_node_ids branch) is able to return not just coordina
 
 First, query a route:
 
-`curl 'http://localhost:5000/route/v1/driving/-122.40726470947266,37.80313821864871;-122.48657226562499,37.76922210201122' > response.json`
+`curl 'http://localhost:5000/route/v1/driving/-122.40726470947266,37.80313821864871;-122.48657226562499,37.76922210201122?geometries=geojson' > response.json`
 
 Then, extract the list of nodeids from that:
 
 `cat response.json | node -e 'var c=[]; process.stdin.on("data",function(chunk){c.push(chunk);}); process.stdin.on("end",function() { var input=c.join(),j=JSON.parse(input),nodes=[]; j.routes[0].legs[0].steps.map(function(step,idx) { step.nodes.map(function(nodeid,nodeidx) { if (!(idx>0&&nodeidx==0)) nodes.push(nodeid); }); }); console.log(nodes.join(",")); });' > nodelist.txt`
+
+
+## Getting the coordinates to query with
+
+**NEW** You can now just supply a coordinate list.  `route-annotator` will try to find the node that matches the coordinates you supply.  This approach depends on the coordinates you supply being *very close* to the original values.  `route-annotator` will find the closest node within 1m of the coordinate you supply.
+
+`cat response.json | node -e 'var c=[]; process.stdin.on("data",function(chunk){c.push(chunk);}); process.stdin.on("end",function() { var input=c.join(),j=JSON.parse(input),coords=[]; j.routes[0].legs[0].steps.map(function(step,idx) { step.geometry.coordinates.map(function(lonlat,coordidx) { if (!(idx>0&&coordidx==0)) coords.push(lonlat); }); }); console.log(coords.join(";")); });' > coordlist.txt`
 
 ## Running the route annotator
 
@@ -36,11 +43,21 @@ After building, run:
 
 ## Querying route metadata
 
-The URL format is:
+**NOTE**: querying by node ID is faster - if you supply coordinates, they need to be internally mapped to nodes.
+
+For querying by node ID, the URL format is:
 
   http://localhost:5000/nodelist/1,2,3,4,5,6
 
+For queryinb by coordinates, the URL format is:
+
+  http://localhost:5000/coordlist/lon,lat;lon,lat;lon,lat
+
 So, using the node sequence from above, you can query:
+
+  `curl http://localhost:5000/coordlist/$(cat coordlist.txt)`
+
+OR
 
   `curl http://localhost:5000/nodelist/$(cat nodelist.txt)`
 
