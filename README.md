@@ -10,27 +10,54 @@ Then, you can query it for sequences of nodes, and get back the tags that are on
 
 Run:
 
-  `./deps.sh`
-  `make`
+```
+./deps.sh
+make
+```
 
 ## Getting the node sequence to query with
 
 OSRM (on the feature/expose_node_ids branch) is able to return not just coordinates along a route, but OSM node ids as well.
 
-First, query a route:
+First, query a route (this example is across San Francisco, east to west):
 
-`curl 'http://localhost:5000/route/v1/driving/-122.40726470947266,37.80313821864871;-122.48657226562499,37.76922210201122?geometries=geojson' > response.json`
+```
+curl 'http://localhost:5000/route/v1/driving/-122.40726470947266,37.80313821864871;-122.48657226562499,37.76922210201122?geometries=geojson' > response.json
+```
 
 Then, extract the list of nodeids from that:
 
-`cat response.json | node -e 'var c=[]; process.stdin.on("data",function(chunk){c.push(chunk);}); process.stdin.on("end",function() { var input=c.join(),j=JSON.parse(input),nodes=[]; j.routes[0].legs[0].steps.map(function(step,idx) { step.nodes.map(function(nodeid,nodeidx) { if (!(idx>0&&nodeidx==0)) nodes.push(nodeid); }); }); console.log(nodes.join(",")); });' > nodelist.txt`
+```
+cat response.json | node -e '
+  var c=[]; 
+  process.stdin.on("data",function(chunk){c.push(chunk);}); 
+  process.stdin.on("end",function() { 
+    var input=c.join(),j=JSON.parse(input),nodes=[]; 
+    j.routes[0].legs[0].steps.map(function(step,idx) { 
+       step.nodes.map(function(nodeid,nodeidx) { 
+          if (!(idx>0&&nodeidx==0)) nodes.push(nodeid); 
+        }); 
+    }); 
+    console.log(nodes.join(",")); 
+  });' > nodelist.txt
+```
 
+OR extract the list of coordinates with:
 
-## Getting the coordinates to query with
-
-**NEW** You can now just supply a coordinate list.  `route-annotator` will try to find the node that matches the coordinates you supply.  This approach depends on the coordinates you supply being *very close* to the original values.  `route-annotator` will find the closest node within 1m of the coordinate you supply.
-
-`cat response.json | node -e 'var c=[]; process.stdin.on("data",function(chunk){c.push(chunk);}); process.stdin.on("end",function() { var input=c.join(),j=JSON.parse(input),coords=[]; j.routes[0].legs[0].steps.map(function(step,idx) { step.geometry.coordinates.map(function(lonlat,coordidx) { if (!(idx>0&&coordidx==0)) coords.push(lonlat); }); }); console.log(coords.join(";")); });' > coordlist.txt`
+```
+cat response.json | node -e '
+  var c=[]; 
+  process.stdin.on("data",function(chunk){c.push(chunk);}); 
+  process.stdin.on("end",function() { 
+    var input=c.join(),j=JSON.parse(input),coords=[]; 
+    j.routes[0].legs[0].steps.map(function(step,idx) { 
+       step.geometry.coordinates(function(lonlat,coordidx) { 
+          if (!(idx>0&&coordidx==0)) coords.push(lonlat); 
+        }); 
+    }); 
+    console.log(coords.join(";")); 
+  });' > coordlist.txt
+```
 
 ## Running the route annotator
 
@@ -47,11 +74,11 @@ After building, run:
 
 For querying by node ID, the URL format is:
 
-  http://localhost:5000/nodelist/1,2,3,4,5,6
+  `http://localhost:5000/nodelist/1,2,3,4,5,6`
 
 For queryinb by coordinates, the URL format is:
 
-  http://localhost:5000/coordlist/lon,lat;lon,lat;lon,lat
+  `http://localhost:5000/coordlist/lon,lat;lon,lat;lon,lat`
 
 So, using the node sequence from above, you can query:
 
@@ -78,3 +105,13 @@ The current response structure is:
   "nodeB,nodeC" : { "key" : "value" , ... }
 }
 ```
+
+# TODO
+  - [ ] Consolidate consecutive node id pairs that are on the same way and only report tags once (include the range of node indexes that are part of each way in the response)
+  - [ ] Figure out how to handle node pairs that belong to multiple ways
+  - [x] Perhaps implement an RTree, and allow the matching to be done by lon/lat instead of requiring node ids (DONE: you can now search by coordinate)
+  - [ ] Gracefully handle missing pairs, so that we can honour a request from a .OSM file that is slightly out of sync with the one we're serving
+  - [ ] Startup progress indicator
+  - [ ] Parallelize OSM parsing at the start
+  - [ ] Improve the `nodepair_t` hash function to improve performance
+  - [x] Figure out why we can only handl 123 characters on the URL (it was `int` vs `ulong_long`)
