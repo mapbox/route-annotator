@@ -344,34 +344,56 @@ int main(int argc, char** argv) try {
 
     web::json::value response;
 
+    std::vector<wayid_t> wayid_list;
+    std::unordered_set<wayid_t> wayid_set;
+
     // the zip_iterator allows us to group pairs.  So, if we get 1,2,3,4
     // in our nodeids vector, this for_each will loop over:
     //   (1,2) (2,3) (3,4)
     std::for_each(
         boost::make_zip_iterator(boost::make_tuple(nodeids.cbegin(), nodeids.cbegin()+1)),
         boost::make_zip_iterator(boost::make_tuple(nodeids.cend()-1, nodeids.cend())),
-        [&extractor,&response](boost::tuple<const nodeid_t, const nodeid_t> pair) {
-
+        [&extractor,&wayid_list,&wayid_set](boost::tuple<const nodeid_t, const nodeid_t> pair) {
             // If our pair exists in the pair_way_map
             if (extractor.pair_way_map.find(std::make_pair(pair.get<0>(), pair.get<1>())) != extractor.pair_way_map.end())
             {
                 // Get the way id for this node pair
                 const auto wayid = extractor.pair_way_map[std::make_pair(pair.get<0>(), pair.get<1>())];
-                // Then get the tags for that way
-                const auto tagmap = extractor.way_tag_map[wayid];
-
-                // Create a key for our JSON response
-                std::string nodepairstr(std::to_string(pair.get<0>()) + "," + std::to_string(pair.get<1>()));
-
-                // an create the tag key/val dictionary for that
-                web::json::value tags = web::json::value::object();
-                for (const auto &entry : tagmap) {
-                    tags[extractor.getstring(entry.first)] = web::json::value(extractor.getstring(entry.second));
-                }
-                response[nodepairstr] = tags;
+                wayid_list.push_back(wayid);
+                wayid_set.insert(wayid);
+            }
+            else
+            {
+                wayid_list.push_back(0);
             }
         }
     );
+
+    web::json::value j_array = web::json::value::array(wayid_list.size());
+    int idx = 0;
+    for (const auto &wayid : wayid_list) {
+        j_array[idx++] = wayid;
+    }
+
+    response["ways_touched"] = j_array;
+
+    web::json::value waydata;
+
+    for (const auto &wayid : wayid_set)
+    {
+        if (wayid == 0) continue;
+        // Then get the tags for that way
+        const auto tagmap = extractor.way_tag_map[wayid];
+
+        // an create the tag key/val dictionary for that
+        web::json::value tags = web::json::value::object();
+        for (const auto &entry : tagmap) {
+            tags[extractor.getstring(entry.first)] = web::json::value(extractor.getstring(entry.second));
+        }
+        waydata[std::to_string(wayid)] = tags;
+    }
+
+    response["way_tags"] = waydata;
 
     // Send the reply back
     request.reply(web::http::status_codes::OK, response);
