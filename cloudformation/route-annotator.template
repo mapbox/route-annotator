@@ -24,7 +24,7 @@
         "S3URL": {
             "Description": "S3 URL (s3://...) to the OSM (.osm, osm.bz2 or .pbf) file to use.",
             "Type": "String",
-            "Default": "s3://mapbox/playground/danpat/california-tomtom-2016-04-01.pbf"
+            "Default": "s3://mapbox/playground/danpat/california_tomtom-2016-04-01.pbf"
         },
         "Route53Zone": {
             "Default": "tilestream.net",
@@ -680,20 +680,6 @@
                                                 "Ref": "AWS::Region"
                                             },
                                             "/slugs/route-annotator/${GitSha}.tar.gz || code=1"
-                                        ]
-                                    ]
-                                },
-                                {
-                                    "Fn::Join": [
-                                        " ",
-                                        [
-                                            "# Ensure CloudFormation parameters are referenced:",
-                                            {
-                                                "Ref": "Bucket"
-                                            },
-                                            {
-                                                "Ref": "Prefix"
-                                            }
                                         ]
                                     ]
                                 },
