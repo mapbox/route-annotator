@@ -9,5 +9,5 @@ cmake -E chdir third_party git clone --depth 1 --branch v2.6.1 https://github.co
 
 # Casablanca Build
 cmake -E make_directory third_party/casablanca/Release/build
-cmake -E chdir third_party/casablanca/Release/build cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SAMPLES=OFF -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=OFF -G Ninja
+cmake -E chdir third_party/casablanca/Release/build cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SAMPLES=OFF -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=OFF
 cmake -E chdir third_party/casablanca/Release/build cmake --build .
