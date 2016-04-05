@@ -150,10 +150,10 @@ struct Extractor final : osmium::handler::Handler {
                             used_nodes.emplace(pair.get<1>().ref());
                         }
                         if (forward) {
-                            pair_way_map.insert({std::make_pair(pair.get<0>().ref(), pair.get<1>().ref()),way.id()});
+                            pair_way_map.emplace(std::make_pair(pair.get<0>().ref(), pair.get<1>().ref()),way.id());
                         }
                         if (reverse) {
-                            pair_way_map.insert({std::make_pair(pair.get<1>().ref(), pair.get<0>().ref()),way.id()});
+                            pair_way_map.emplace(std::make_pair(pair.get<1>().ref(), pair.get<0>().ref()),way.id());
                         }
                     }
                     catch (const osmium::invalid_location &e)
@@ -182,9 +182,16 @@ struct Extractor final : osmium::handler::Handler {
     void finish()
     {
         rtree = std::make_unique<boost::geometry::index::rtree<value_t, boost::geometry::index::rstar<8>>>(used_nodes_list.begin(), used_nodes_list.end());
-        used_nodes.clear();
-        used_nodes_list.clear();
-        string_index.clear();
+
+        // Tricks to free memory, swap out data with empty versions
+        // This frees the memory.  shrink_to_fit doesn't guarantee that.
+        std::unordered_set<nodeid_t>().swap(used_nodes);
+        std::vector<value_t>().swap(used_nodes_list);
+        std::unordered_map<std::string, std::size_t>().swap(string_index);
+
+        // Hint that these data structures can be shrunk.
+        string_data.shrink_to_fit();
+        string_offsets.shrink_to_fit();
     }
 
     /**
