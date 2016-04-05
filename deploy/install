@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Perform your service's installation steps here.
+
+$app_dir/deploy/configure-volumes
+
+# move /tmp to /data
+mkdir -p /data/tmp
+chmod a+rwx /data/tmp
+mv /tmp/* /data/tmp
+rmdir /tmp
+ln -s /data/tmp /tmp
+
+pushd /data
+aws s3 cp "$S3URL" .
+aws s3 cp "${S3URL}.md5" .
+
+filename="${S3URL##*/}"
+extension="${filename##*.}"
+
+md5sum -c "${filename}.md5"
+echo "${filename}" > latest
+
+popd
+
+# Install gcc5 if we're on Linux.  For OSX, we'll depend on the XCode-provided
+# default compiler
+if [ $(uname) = "Linux" ] ; then
+    sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+    sudo apt-get update -y
+    sudo apt-get install -y build-essential
+    sudo apt-get install -y gcc-5
+fi
+
+./bootstrap.sh
+
+mkdir -p bin
+mv build/Release/route-annotatord bin
+
+source /etc/profile
+
+cat $app_dir/deploy/route-annotator.conf | $bp_dir/common/replacer.sh > /etc/init/route-annotator.conf
+
+start route-annotator

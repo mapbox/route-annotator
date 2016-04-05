@@ -1,0 +1,1567 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "route-annotator",
+    "Parameters": {
+        "GitSha": {
+            "Description": "Branch or commit checkout during bootstrap.",
+            "Type": "String"
+        },
+        "MinSize": {
+            "Description": "AutoScaling group minimum size",
+            "Type": "Number",
+            "Default": 1
+        },
+        "MaxSize": {
+            "Description": "AutoScaling group maximum size",
+            "Type": "Number",
+            "Default": 10
+        },
+        "InstanceType": {
+            "Description": "Type of EC2 instance to use.",
+            "Type": "String",
+            "Default": "r3.large"
+        },
+        "S3URL": {
+            "Description": "S3 URL (s3://...) to the OSM (.osm, osm.bz2 or .pbf) file to use.",
+            "Type": "String",
+            "Default": "s3://mapbox/playground/danpat/california-tomtom-2016-04-01.pbf"
+        },
+        "Route53Zone": {
+            "Default": "tilestream.net",
+            "Description": "Route53 Zone for stack specific subdomain. Must NOT end with a dot.",
+            "Type": "String"
+        },
+        "SSLCertificateId": {
+            "Description": "ARN of SSL certificate to use on Elastic Load Balancer",
+            "Type": "String",
+            "AllowedValues": [
+                "arn:aws:iam::234858372212:server-certificate/wc.tilestream.net09282015",
+                "arn:aws:iam::234858372212:server-certificate/wc.mapbox.com-digicert-SHA2"
+            ]
+        },
+        "AlarmEmail": {
+            "Description": "Email to notify when an alarms is triggered.",
+            "Type": "String",
+            "Default": "devnull@mapbox.com"
+        },
+        "CostCategory": {
+            "Default": "RD",
+            "Description": "Category for the costs associated with this stack",
+            "Type": "String",
+            "AllowedValues": [
+                "RD",
+                "COGS"
+            ]
+        },
+        "LibratoEmail": {
+            "Description": "Email address used for Librato stats account",
+            "Type": "String",
+            "Default": ""
+        },
+        "LibratoAPIKey": {
+            "Description": "API key used for Librato stats account",
+            "Type": "String",
+            "Default": ""
+        },
+        "SumoLogicEmail": {
+            "Description": "Email address used for sumologic",
+            "Type": "String",
+            "Default": "jeff+machine@mapbox.com"
+        },
+        "SumoLogicPassword": {
+            "Description": "Password for sumologic account",
+            "Type": "String",
+            "Default": ""
+        }
+    },
+    "Resources": {
+        "Role": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "S3OSM",
+                        "PolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "s3:GetObject",
+                                        "s3:GetObjectAcl"
+                                    ],
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                "",
+                                                [
+                                                    "arn:aws:s3:::",
+                                                    {
+                                                        "Ref": "S3URL"
+                                                    },
+                                                    "*"
+                                                ]
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "PolicyName": "CloudFormationUpdates",
+                        "PolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "cloudformation:SignalResource"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                "",
+                                                [
+                                                    "arn:aws:cloudformation:",
+                                                    {
+                                                        "Ref": "AWS::Region"
+                                                    },
+                                                    ":",
+                                                    {
+                                                        "Ref": "AWS::AccountId"
+                                                    },
+                                                    ":stack/",
+                                                    {
+                                                        "Ref": "AWS::StackName"
+                                                    },
+                                                    "/*"
+                                                ]
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Action": [
+                                        "elasticloadbalancing:DescribeInstanceHealth"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": [
+                                        "*"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "PolicyName": "AlarmOnFailedBoot",
+                        "PolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "sns:Publish"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": [
+                                        {
+                                            "Ref": "AlarmSNSTopic"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "PolicyName": "cwput",
+                        "PolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "cloudwatch:PutMetricData",
+                                        "autoscaling:DescribeAutoScalingInstances"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": [
+                                        "*"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "PolicyName": "buildpack",
+                        "PolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "cloudformation:DescribeStacks",
+                                        "cloudformation:DescribeStackResources"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                "",
+                                                [
+                                                    "arn:aws:cloudformation:",
+                                                    {
+                                                        "Ref": "AWS::Region"
+                                                    },
+                                                    ":",
+                                                    {
+                                                        "Ref": "AWS::AccountId"
+                                                    },
+                                                    ":stack/",
+                                                    {
+                                                        "Ref": "AWS::StackName"
+                                                    },
+                                                    "/*"
+                                                ]
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Action": [
+                                        "s3:GetObject"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                "/",
+                                                [
+                                                    "arn:aws:s3:::mapbox/buildpack/authorized_keys_manager",
+                                                    {
+                                                        "Ref": "AWS::StackName"
+                                                    },
+                                                    "*"
+                                                ]
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Action": [
+                                        "s3:ListBucket"
+                                    ],
+                                    "Condition": {
+                                        "StringLike": {
+                                            "s3:prefix": {
+                                                "Fn::Join": [
+                                                    "/",
+                                                    [
+                                                        "buildpack/authorized_keys_manager",
+                                                        {
+                                                            "Ref": "AWS::StackName"
+                                                        },
+                                                        "*"
+                                                    ]
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "Effect": "Allow",
+                                    "Resource": [
+                                        "arn:aws:s3:::mapbox"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "PolicyName": "download-slugs",
+                        "PolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "s3:GetBucketLocation"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                "",
+                                                [
+                                                    "arn:aws:s3:::mapbox-",
+                                                    {
+                                                        "Ref": "AWS::Region"
+                                                    }
+                                                ]
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Action": [
+                                        "s3:GetObject"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": [
+                                        {
+                                            "Fn::Join": [
+                                                "",
+                                                [
+                                                    "arn:aws:s3:::mapbox-",
+                                                    {
+                                                        "Ref": "AWS::Region"
+                                                    },
+                                                    "/slugs/*"
+                                                ]
+                                            ]
+                                        },
+                                        {
+                                            "Fn::Join": [
+                                                "",
+                                                [
+                                                    "arn:aws:s3:::mapbox-",
+                                                    {
+                                                        "Ref": "AWS::Region"
+                                                    },
+                                                    "/release/*"
+                                                ]
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "VPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": "10.0.0.0/16",
+                "EnableDnsSupport": true,
+                "EnableDnsHostnames": true,
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "AWS::StackName"
+                        }
+                    }
+                ]
+            }
+        },
+        "SubnetA": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "CidrBlock": "10.0.0.0/24",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "A"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        0,
+                        {
+                            "Fn::FindInMap": [
+                                "RegionInfo",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "AvailabilityZones"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "SubnetB": {
+            "Type": "AWS::EC2::Subnet",
+            "Condition": "HasTwoAZs",
+            "Properties": {
+                "CidrBlock": "10.0.1.0/24",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "B"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        1,
+                        {
+                            "Fn::FindInMap": [
+                                "RegionInfo",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "AvailabilityZones"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "SubnetC": {
+            "Type": "AWS::EC2::Subnet",
+            "Condition": "HasThreeAZs",
+            "Properties": {
+                "CidrBlock": "10.0.2.0/24",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "C"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        2,
+                        {
+                            "Fn::FindInMap": [
+                                "RegionInfo",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "AvailabilityZones"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "InternetGateway": {
+            "Type": "AWS::EC2::InternetGateway"
+        },
+        "GatewayAttachment": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "InternetGatewayId": {
+                    "Ref": "InternetGateway"
+                }
+            }
+        },
+        "RouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
+        },
+        "Route": {
+            "Type": "AWS::EC2::Route",
+            "DependsOn": "GatewayAttachment",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "InternetGateway"
+                }
+            }
+        },
+        "SubnetARouteTableAssociation": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetA"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTable"
+                }
+            }
+        },
+        "SubnetBRouteTableAssociation": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Condition": "HasTwoAZs",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetB"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTable"
+                }
+            }
+        },
+        "SubnetCRouteTableAssociation": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Condition": "HasThreeAZs",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "SubnetC"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTable"
+                }
+            }
+        },
+        "InstanceSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "ssh + http from ELB",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "20009",
+                        "ToPort": "20009",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "5000",
+                        "ToPort": "5000",
+                        "SourceSecurityGroupId": {
+                            "Ref": "ELBSecurityGroup"
+                        }
+                    }
+                ]
+            }
+        },
+        "InstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "Role"
+                    }
+                ]
+            }
+        },
+        "LaunchConfiguration": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Properties": {
+                "AssociatePublicIpAddress": true,
+                "IamInstanceProfile": {
+                    "Ref": "InstanceProfile"
+                },
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "RegionInfo",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "HVMAMI"
+                    ]
+                },
+                "SecurityGroups": [
+                    {
+                        "Ref": "InstanceSecurityGroup"
+                    }
+                ],
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "InstanceMonitoring": "true",
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "\n",
+                            [
+                                "#!/usr/bin/env bash",
+                                "set -ex",
+                                "# Logging",
+                                "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1",
+                                {
+                                    "Fn::Join": [
+                                        "=",
+                                        [
+                                            "export STACK_NAME",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            }
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "Fn::Join": [
+                                        "=",
+                                        [
+                                            "export GitSha",
+                                            {
+                                                "Ref": "GitSha"
+                                            }
+                                        ]
+                                    ]
+                                },
+                                "export BUILDPACK_SKIP_NTP=1",
+                                "mkdir -p /usr/local/src/buildpack && cd /usr/local/src/buildpack",
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "wget",
+                                            " https://mapbox-",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            ".s3.amazonaws.com/release/buildpack/v0.19.3.tar.gz -O - | tar -xz --strip-components=1"
+                                        ]
+                                    ]
+                                },
+                                "export code=0",
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "/usr/local/src/buildpack/bin/start",
+                                            " s3://mapbox-",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "/slugs/seatbelts/v0.0.7.tar.gz /usr/local/src/seatbelts || code=1"
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "/usr/local/src/buildpack/bin/start",
+                                            " s3://mapbox-",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "/slugs/route-annotator/${GitSha}.tar.gz || code=1"
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "Fn::Join": [
+                                        " ",
+                                        [
+                                            "# Ensure CloudFormation parameters are referenced:",
+                                            {
+                                                "Ref": "Bucket"
+                                            },
+                                            {
+                                                "Ref": "Prefix"
+                                            }
+                                        ]
+                                    ]
+                                },
+                                "exit $code"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "AutoScalingGroup": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "DependsOn": "GatewayAttachment",
+            "Properties": {
+                "AvailabilityZones": {
+                    "Fn::FindInMap": [
+                        "RegionInfo",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "AvailabilityZones"
+                    ]
+                },
+                "VPCZoneIdentifier": [
+                    {
+                        "Ref": "SubnetA"
+                    },
+                    {
+                        "Fn::If": [
+                            "HasTwoAZs",
+                            {
+                                "Ref": "SubnetB"
+                            },
+                            {
+                                "Ref": "AWS::NoValue"
+                            }
+                        ]
+                    },
+                    {
+                        "Fn::If": [
+                            "HasThreeAZs",
+                            {
+                                "Ref": "SubnetC"
+                            },
+                            {
+                                "Ref": "AWS::NoValue"
+                            }
+                        ]
+                    }
+                ],
+                "LoadBalancerNames": [
+                    {
+                        "Ref": "LoadBalancer"
+                    }
+                ],
+                "LaunchConfigurationName": {
+                    "Ref": "LaunchConfiguration"
+                },
+                "MinSize": {
+                    "Ref": "MinSize"
+                },
+                "MaxSize": {
+                    "Ref": "MaxSize"
+                },
+                "HealthCheckType": "ELB",
+                "HealthCheckGracePeriod": "600",
+                "TerminationPolicies": [
+                    "NewestInstance"
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    {
+                                        "Ref": "GitSha"
+                                    }
+                                ]
+                            ]
+                        },
+                        "PropagateAtLaunch": "true"
+                    },
+                    {
+                        "Key": "CostCategory",
+                        "Value": {
+                            "Ref": "CostCategory"
+                        },
+                        "PropagateAtLaunch": "true"
+                    }
+                ]
+            },
+            "UpdatePolicy": {
+                "AutoScalingRollingUpdate": {
+                    "MinInstancesInService": {
+                        "Ref": "MinSize"
+                    },
+                    "PauseTime": "PT60M",
+                    "WaitOnResourceSignals": "true",
+                    "MaxBatchSize": {
+                        "Ref": "MinSize"
+                    },
+                    "SuspendProcesses": [
+                        "AZRebalance",
+                        "AlarmNotification",
+                        "ScheduledActions"
+                    ]
+                },
+                "AutoScalingScheduledAction": {
+                    "IgnoreUnmodifiedGroupSizeProperties": "true"
+                }
+            }
+        },
+        "ELBSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "HTTPS",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "LoadBalancer": {
+            "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+            "Properties": {
+                "Subnets": [
+                    {
+                        "Ref": "SubnetA"
+                    },
+                    {
+                        "Fn::If": [
+                            "HasTwoAZs",
+                            {
+                                "Ref": "SubnetB"
+                            },
+                            {
+                                "Ref": "AWS::NoValue"
+                            }
+                        ]
+                    },
+                    {
+                        "Fn::If": [
+                            "HasThreeAZs",
+                            {
+                                "Ref": "SubnetC"
+                            },
+                            {
+                                "Ref": "AWS::NoValue"
+                            }
+                        ]
+                    }
+                ],
+                "LoadBalancerName": {
+                    "Ref": "AWS::StackName"
+                },
+                "AccessLoggingPolicy": {
+                    "EmitInterval": 5,
+                    "Enabled": "true",
+                    "S3BucketName": {
+                        "Fn::FindInMap": [
+                            "RegionInfo",
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            "LoggingBucket"
+                        ]
+                    },
+                    "S3BucketPrefix": "elb"
+                },
+                "CrossZone": "true",
+                "HealthCheck": {
+                    "HealthyThreshold": "3",
+                    "Interval": "10",
+                    "Target": "HTTP:5000/",
+                    "Timeout": "9",
+                    "UnhealthyThreshold": "3"
+                },
+                "ConnectionDrainingPolicy": {
+                    "Enabled": "true",
+                    "Timeout": "60"
+                },
+                "Listeners": [
+                    {
+                        "InstancePort": "5000",
+                        "InstanceProtocol": "HTTP",
+                        "LoadBalancerPort": "443",
+                        "Protocol": "HTTPS",
+                        "SSLCertificateId": {
+                            "Ref": "SSLCertificateId"
+                        }
+                    }
+                ],
+                "SecurityGroups": [
+                    {
+                        "Ref": "ELBSecurityGroup"
+                    }
+                ]
+            }
+        },
+        "AlarmSNSTopic": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+                "TopicName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            {
+                                "Ref": "AWS::Region"
+                            }
+                        ]
+                    ]
+                },
+                "Subscription": [
+                    {
+                        "Endpoint": {
+                            "Ref": "AlarmEmail"
+                        },
+                        "Protocol": "email"
+                    }
+                ]
+            }
+        },
+        "AlarmCPUUtilization": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmName": {
+                    "Fn::Join": [
+                        " ",
+                        [
+                            "CPUUtilization",
+                            {
+                                "Ref": "AWS::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "EvaluationPeriods": "2",
+                "Statistic": "Average",
+                "Threshold": "55",
+                "AlarmDescription": "https://github.com/mapbox/route-annotator/blob/master/docs/alarms.md#cpuutilization",
+                "Period": "60",
+                "AlarmActions": [
+                    {
+                        "Ref": "AlarmSNSTopic"
+                    }
+                ],
+                "InsufficientDataActions": [
+                    {
+                        "Ref": "AlarmSNSTopic"
+                    }
+                ],
+                "Namespace": "AWS/EC2",
+                "Dimensions": [
+                    {
+                        "Name": "AutoScalingGroupName",
+                        "Value": {
+                            "Ref": "AutoScalingGroup"
+                        }
+                    }
+                ],
+                "ComparisonOperator": "GreaterThanThreshold",
+                "MetricName": "CPUUtilization"
+            }
+        },
+        "AlarmMemoryUtilization": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmName": {
+                    "Fn::Join": [
+                        " ",
+                        [
+                            "MemoryUtilization",
+                            {
+                                "Ref": "AWS::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "EvaluationPeriods": "10",
+                "Statistic": "Average",
+                "Threshold": "70",
+                "AlarmDescription": "https://github.com/mapbox/route-annotator/blob/master/docs/alarms.md#memoryutilization",
+                "Period": "60",
+                "AlarmActions": [
+                    {
+                        "Ref": "AlarmSNSTopic"
+                    }
+                ],
+                "InsufficientDataActions": [
+                    {
+                        "Ref": "AlarmSNSTopic"
+                    }
+                ],
+                "Namespace": "System/Linux",
+                "Dimensions": [
+                    {
+                        "Name": "AutoScalingGroupName",
+                        "Value": {
+                            "Fn::Join": [
+                                ".",
+                                [
+                                    {
+                                        "Ref": "AWS::Region"
+                                    },
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "ComparisonOperator": "GreaterThanThreshold",
+                "MetricName": "MemoryUtilization"
+            }
+        },
+        "AlarmrootDiskUtilization": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmName": {
+                    "Fn::Join": [
+                        " ",
+                        [
+                            "rootDiskUtilization",
+                            {
+                                "Ref": "AWS::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "AlarmDescription": "https://github.com/mapbox/route-annotator/blob/master/docs/alarms.md#rootdiskutilization",
+                "EvaluationPeriods": "10",
+                "Statistic": "Average",
+                "Threshold": "70",
+                "Period": "60",
+                "AlarmActions": [
+                    {
+                        "Ref": "AlarmSNSTopic"
+                    }
+                ],
+                "InsufficientDataActions": [
+                    {
+                        "Ref": "AlarmSNSTopic"
+                    }
+                ],
+                "Namespace": "System/Linux",
+                "Dimensions": [
+                    {
+                        "Name": "AutoScalingGroupName",
+                        "Value": {
+                            "Fn::Join": [
+                                ".",
+                                [
+                                    {
+                                        "Ref": "AWS::Region"
+                                    },
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "ComparisonOperator": "GreaterThanThreshold",
+                "MetricName": "rootDiskUtilization"
+            }
+        },
+        "AlarmmntDiskUtilization": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmName": {
+                    "Fn::Join": [
+                        " ",
+                        [
+                            "mntDiskUtilization",
+                            {
+                                "Ref": "AWS::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "AlarmDescription": "https://github.com/mapbox/route-annotator/blob/master/docs/alarms.md#mntdiskutilization",
+                "EvaluationPeriods": "10",
+                "Statistic": "Average",
+                "Threshold": "70",
+                "Period": "60",
+                "AlarmActions": [
+                    {
+                        "Ref": "AlarmSNSTopic"
+                    }
+                ],
+                "InsufficientDataActions": [
+                    {
+                        "Ref": "AlarmSNSTopic"
+                    }
+                ],
+                "Namespace": "System/Linux",
+                "Dimensions": [
+                    {
+                        "Name": "AutoScalingGroupName",
+                        "Value": {
+                            "Fn::Join": [
+                                ".",
+                                [
+                                    {
+                                        "Ref": "AWS::Region"
+                                    },
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "ComparisonOperator": "GreaterThanThreshold",
+                "MetricName": "mnt/DiskUtilization"
+            }
+        },
+        "AlarmLoadAverage": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmName": {
+                    "Fn::Join": [
+                        " ",
+                        [
+                            "LoadAverage",
+                            {
+                                "Ref": "AWS::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "EvaluationPeriods": "5",
+                "Statistic": "Average",
+                "Threshold": "32",
+                "AlarmDescription": "https://github.com/mapbox/route-annotator/blob/master/docs/alarms.md#loadaverage",
+                "Period": "60",
+                "AlarmActions": [
+                    {
+                        "Ref": "AlarmSNSTopic"
+                    }
+                ],
+                "InsufficientDataActions": [
+                    {
+                        "Ref": "AlarmSNSTopic"
+                    }
+                ],
+                "Namespace": "System/Linux",
+                "Dimensions": [
+                    {
+                        "Name": "AutoScalingGroupName",
+                        "Value": {
+                            "Fn::Join": [
+                                ".",
+                                [
+                                    {
+                                        "Ref": "AWS::Region"
+                                    },
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "ComparisonOperator": "GreaterThanThreshold",
+                "MetricName": "LoadAverage"
+            }
+        },
+        "AlarmHTTPCodeBackend5XX": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmName": {
+                    "Fn::Join": [
+                        " ",
+                        [
+                            "HTTPCode_Backend_5XX",
+                            {
+                                "Ref": "AWS::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "AlarmDescription": "https://github.com/mapbox/route-annotator/blob/master/docs/alarms.md#httpcode_backend_5xx",
+                "MetricName": "HTTPCode_Backend_5XX",
+                "Namespace": "AWS/ELB",
+                "Statistic": "Sum",
+                "Period": "60",
+                "EvaluationPeriods": "5",
+                "Threshold": "100",
+                "AlarmActions": [
+                    {
+                        "Ref": "AlarmSNSTopic"
+                    }
+                ],
+                "Dimensions": [
+                    {
+                        "Name": "LoadBalancerName",
+                        "Value": {
+                            "Ref": "LoadBalancer"
+                        }
+                    }
+                ],
+                "ComparisonOperator": "GreaterThanThreshold"
+            }
+        },
+        "AlarmHTTPCodeELB5XX": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmName": {
+                    "Fn::Join": [
+                        " ",
+                        [
+                            "HTTPCode_ELB_5XX",
+                            {
+                                "Ref": "AWS::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "AlarmDescription": "https://github.com/mapbox/route-annotator/blob/master/docs/alarms.md#httpcode_elb_5xx",
+                "MetricName": "HTTPCode_ELB_5XX",
+                "Namespace": "AWS/ELB",
+                "Statistic": "Sum",
+                "Period": "60",
+                "EvaluationPeriods": "5",
+                "Threshold": "100",
+                "AlarmActions": [
+                    {
+                        "Ref": "AlarmSNSTopic"
+                    }
+                ],
+                "Dimensions": [
+                    {
+                        "Name": "LoadBalancerName",
+                        "Value": {
+                            "Ref": "LoadBalancer"
+                        }
+                    }
+                ],
+                "ComparisonOperator": "GreaterThanThreshold"
+            }
+        },
+        "AlarmRequestCount": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmName": {
+                    "Fn::Join": [
+                        " ",
+                        [
+                            "RequestCount",
+                            {
+                                "Ref": "AWS::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "AlarmDescription": "https://github.com/mapbox/route-annotator/blob/master/docs/alarms.md#requestcount",
+                "MetricName": "RequestCount",
+                "Namespace": "AWS/ELB",
+                "Statistic": "Sum",
+                "Period": "60",
+                "EvaluationPeriods": "5",
+                "Threshold": "10000",
+                "AlarmActions": [
+                    {
+                        "Ref": "AlarmSNSTopic"
+                    }
+                ],
+                "Dimensions": [
+                    {
+                        "Name": "LoadBalancerName",
+                        "Value": {
+                            "Ref": "LoadBalancer"
+                        }
+                    }
+                ],
+                "ComparisonOperator": "GreaterThanThreshold"
+            }
+        },
+        "AlarmLatency": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmName": {
+                    "Fn::Join": [
+                        " ",
+                        [
+                            "Latency",
+                            {
+                                "Ref": "AWS::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "AlarmDescription": "https://github.com/mapbox/route-annotator/blob/master/docs/alarms.md#latency",
+                "MetricName": "Latency",
+                "Namespace": "AWS/ELB",
+                "Statistic": "Average",
+                "Period": "60",
+                "EvaluationPeriods": "10",
+                "Threshold": "5",
+                "AlarmActions": [
+                    {
+                        "Ref": "AlarmSNSTopic"
+                    }
+                ],
+                "Dimensions": [
+                    {
+                        "Name": "LoadBalancerName",
+                        "Value": {
+                            "Ref": "LoadBalancer"
+                        }
+                    }
+                ],
+                "ComparisonOperator": "GreaterThanThreshold"
+            }
+        },
+        "ScaleUpPolicy": {
+            "Type": "AWS::AutoScaling::ScalingPolicy",
+            "Properties": {
+                "AdjustmentType": "ChangeInCapacity",
+                "AutoScalingGroupName": {
+                    "Ref": "AutoScalingGroup"
+                },
+                "Cooldown": "1500",
+                "ScalingAdjustment": "1"
+            }
+        },
+        "ScaleDownPolicy": {
+            "Type": "AWS::AutoScaling::ScalingPolicy",
+            "Properties": {
+                "AdjustmentType": "ChangeInCapacity",
+                "AutoScalingGroupName": {
+                    "Ref": "AutoScalingGroup"
+                },
+                "Cooldown": "600",
+                "ScalingAdjustment": "-1"
+            }
+        },
+        "CPUAlarmHigh": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "EvaluationPeriods": "2",
+                "Statistic": "Average",
+                "Threshold": "55",
+                "AlarmDescription": "Alarm if CPU too high",
+                "Period": "60",
+                "AlarmActions": [
+                    {
+                        "Ref": "ScaleUpPolicy"
+                    }
+                ],
+                "Namespace": "AWS/EC2",
+                "Dimensions": [
+                    {
+                        "Name": "AutoScalingGroupName",
+                        "Value": {
+                            "Ref": "AutoScalingGroup"
+                        }
+                    }
+                ],
+                "ComparisonOperator": "GreaterThanThreshold",
+                "MetricName": "CPUUtilization"
+            }
+        },
+        "CPUAlarmLow": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "EvaluationPeriods": "10",
+                "Statistic": "Average",
+                "Threshold": "20",
+                "AlarmDescription": "Alarm if CPU too low",
+                "Period": "60",
+                "AlarmActions": [
+                    {
+                        "Ref": "ScaleDownPolicy"
+                    }
+                ],
+                "Namespace": "AWS/EC2",
+                "Dimensions": [
+                    {
+                        "Name": "AutoScalingGroupName",
+                        "Value": {
+                            "Ref": "AutoScalingGroup"
+                        }
+                    }
+                ],
+                "ComparisonOperator": "LessThanThreshold",
+                "MetricName": "CPUUtilization"
+            }
+        },
+        "RecordSetGroup": {
+            "Type": "AWS::Route53::RecordSetGroup",
+            "Properties": {
+                "HostedZoneName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "Route53Zone"
+                            },
+                            "."
+                        ]
+                    ]
+                },
+                "RecordSets": [
+                    {
+                        "Name": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "-internal.",
+                                    {
+                                        "Ref": "Route53Zone"
+                                    },
+                                    "."
+                                ]
+                            ]
+                        },
+                        "Region": {
+                            "Ref": "AWS::Region"
+                        },
+                        "SetIdentifier": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    {
+                                        "Ref": "AWS::Region"
+                                    }
+                                ]
+                            ]
+                        },
+                        "Type": "A",
+                        "AliasTarget": {
+                            "HostedZoneId": {
+                                "Fn::GetAtt": [
+                                    "LoadBalancer",
+                                    "CanonicalHostedZoneNameID"
+                                ]
+                            },
+                            "DNSName": {
+                                "Fn::GetAtt": [
+                                    "LoadBalancer",
+                                    "CanonicalHostedZoneName"
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "Mappings": {
+        "RegionInfo": {
+            "us-east-1": {
+                "HVMAMI": "ami-616b0504",
+                "AvailabilityZoneCount": 2,
+                "AvailabilityZones": [
+                    "us-east-1a",
+                    "us-east-1e"
+                ],
+                "LoggingBucket": "mapbox-logs"
+            },
+            "us-west-2": {
+                "HVMAMI": "ami-8b3d20bb",
+                "AvailabilityZoneCount": 2,
+                "AvailabilityZones": [
+                    "us-west-2a",
+                    "us-west-2c"
+                ],
+                "LoggingBucket": "mapbox-logs-us-west-2"
+            },
+            "eu-west-1": {
+                "HVMAMI": "ami-4b2c0c3c",
+                "AvailabilityZoneCount": 2,
+                "AvailabilityZones": [
+                    "eu-west-1a",
+                    "eu-west-1c"
+                ],
+                "LoggingBucket": "mapbox-logs-eu-west-1"
+            },
+            "eu-central-1": {
+                "HVMAMI": "ami-d24b46cf",
+                "AvailabilityZoneCount": 2,
+                "AvailabilityZones": [
+                    "eu-central-1a",
+                    "eu-central-1b"
+                ],
+                "LoggingBucket": "mapbox-logs-eu-central-1"
+            }
+        }
+    },
+    "Conditions": {
+        "HasOneAZ": {
+            "Fn::Equals": [
+                1,
+                {
+                    "Fn::FindInMap": [
+                        "RegionInfo",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "AvailabilityZoneCount"
+                    ]
+                }
+            ]
+        },
+        "HasTwoAZs": {
+            "Fn::Not": [
+                {
+                    "Condition": "HasOneAZ"
+                }
+            ]
+        },
+        "HasThreeAZs": {
+            "Fn::Equals": [
+                3,
+                {
+                    "Fn::FindInMap": [
+                        "RegionInfo",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "AvailabilityZoneCount"
+                    ]
+                }
+            ]
+        }
+    },
+    "Outputs": {
+        "Hostname": {
+            "Value": {
+                "Fn::Join": [
+                    ".",
+                    [
+                        {
+                            "Ref": "AWS::StackName"
+                        },
+                        {
+                            "Ref": "Route53Zone"
+                        }
+                    ]
+                ]
+            }
+        }
+    }
+}

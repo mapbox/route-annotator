@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Setup disks
+drivecount=0
+for z in b c d e f g h i j k; do
+    drive="/dev/xvd${z}"
+    if [ -e $drive ]; then
+        umount $drive &> /dev/null || echo "unmount $drive"
+        pvcreate $drive
+        if [ "$drivecount" == "0" ]; then
+            vgcreate volgroup $drive
+        else
+            vgextend volgroup $drive
+        fi
+        drivecount=$(($drivecount + 1))
+    fi
+done
+lvcreate -I64 -i${drivecount} -l +100%FREE volgroup -n lvoldata
+mkfs.ext4 /dev/mapper/volgroup-lvoldata
+# reserve less of the disk for sys ops
+# http://askubuntu.com/questions/79981/df-h-shows-incorrect-free-space
+tune2fs -m 0.05 /dev/mapper/volgroup-lvoldata
+
+mkdir -p /data
+mkdir -p /ephemeral
+
+if [ -e /dev/xvdm ]; then
+    if file -sL /dev/xvdm | grep -v ext4; then
+        mkfs.ext4 /dev/xvdm
+        echo "/dev/xvdm       /data   ext4    defaults,nofail,nobootwait        0       2" >> /etc/fstab
+        mount /dev/xvdm /data
+    fi
+    mount /dev/mapper/volgroup-lvoldata /ephemeral
+else
+    mount /dev/mapper/volgroup-lvoldata /data
+fi
