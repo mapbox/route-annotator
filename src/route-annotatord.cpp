@@ -294,6 +294,12 @@ int main(int argc, char** argv) try {
     // Log the request
     std::fprintf(stderr, "%s\t%s\t%s\n", request.method().c_str(), path.c_str(), query.c_str());
 
+    if (path == "/")
+    {
+        request.reply(web::http::status_codes::OK);
+        return;
+    }
+
     // Parse Coordinates with X3
     // First, try the /nodelist URL pattern
     const auto nodelist_parser = "/nodelist/" >> (boost::spirit::x3::ulong_long) % ",";
