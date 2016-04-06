@@ -22,9 +22,9 @@
             "Default": "r3.large"
         },
         "S3URL": {
-            "Description": "S3 URL (s3://...) to the OSM (.osm, osm.bz2 or .pbf) file to use.",
+            "Description": "S3 location of the OSM (.osm, osm.bz2 or .pbf) file to use.",
             "Type": "String",
-            "Default": "s3://mapbox/playground/danpat/california_tomtom-2016-04-01.pbf"
+            "Default": "mapbox/playground/danpat/california_tomtom-2016-04-01.pbf"
         },
         "Route53Zone": {
             "Default": "tilestream.net",

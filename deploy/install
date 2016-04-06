@@ -1,20 +1,31 @@
 #!/usr/bin/env bash
 
 set -e
+set -u
+
+# TODO: Remove this
+mkdir empty
+pushd empty
+python -m SimpleHTTPServer 80 &
+SIMPLESERVERPID=$!
+popd
 
 # Install gcc5 if we're on Linux.  For OSX, we'll depend on the XCode-provided
 # default compiler
-if [ "$(uname)" -eq "Linux" ] ; then
+if [ "$(uname)" = "Linux" ] ; then
     add-apt-repository -y ppa:ubuntu-toolchain-r/test
     apt-get update -y
     apt-get install -y build-essential
     apt-get install -y gcc-5 g++-5
     apt-get install -y lvm2 libexpat-dev openssl libssl-dev libbz2-dev
-    apt-get install -y pkg-config
+    apt-get install -y pkg-config git
 fi
 
+
 # Setup /data
-$app_dir/deploy/configure-volumes
+if [ ! -d /data ] ; then
+    $app_dir/deploy/configure-volumes
+fi
 
 # move /tmp to /data
 mkdir -p /data/tmp
@@ -25,8 +36,8 @@ ln -s /data/tmp /tmp
 
 # Download OSM map data
 pushd /data
-aws s3 cp "$S3URL" .
-aws s3 cp "${S3URL}.md5" .
+aws s3 cp "s3://${S3URL}" .
+aws s3 cp "s3://${S3URL}.md5" .
 filename="${S3URL##*/}"
 extension="${filename##*.}"
 md5sum -c "${filename}.md5"
@@ -40,6 +51,7 @@ export CC=gcc-5
 mkdir -p bin
 mv build/Release/route-annotatord bin
 
+kill ${SIMPLESERVERPID}
 
 # Start it up
 source /etc/profile
