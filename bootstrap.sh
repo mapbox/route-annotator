@@ -82,11 +82,17 @@ function main() {
     mkdir -p third_party/casablanca/Release/build
     pushd third_party/casablanca/Release/build 
     #sed -i -e 's/ -Werror -pedantic//g' ../src/CMakeLists.txt
+    PROCESSOR_COUNT=1
+    if [ "$(uname)" = "Linux" ] ; then
+        PROCESSOR_COUNT=$(nproc)
+    elif [ "$(uname)" = "Darwin" ] ; then
+        PROCESSOR_COUNT=$(sysctl -n hw.ncpu)
+    fi
     cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SAMPLES=OFF -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=OFF
-    cmake --build .
+    cmake --build . -- -j${PROCESSOR_COUNT}
     popd
 
-    make VERBOSE=1
+    make VERBOSE=1 -j${PROCESSOR_COUNT}
 }
 
 main
