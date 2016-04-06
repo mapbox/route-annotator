@@ -6,7 +6,7 @@ set -u
 # TODO: Remove this
 mkdir empty
 pushd empty
-python -m SimpleHTTPServer 80 &
+python -m SimpleHTTPServer 5000 &
 SIMPLESERVERPID=$!
 popd
 
@@ -54,6 +54,5 @@ mv build/Release/route-annotatord bin
 kill ${SIMPLESERVERPID}
 
 # Start it up
-source /etc/profile
 cat $app_dir/deploy/route-annotator.conf | $bp_dir/common/replacer.sh > /etc/init/route-annotator.conf
 start route-annotator
