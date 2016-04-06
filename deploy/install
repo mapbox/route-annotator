@@ -3,13 +3,6 @@
 set -e
 set -u
 
-# TODO: Remove this
-mkdir empty
-pushd empty
-python -m SimpleHTTPServer 5000 &
-SIMPLESERVERPID=$!
-popd
-
 # Install gcc5 if we're on Linux.  For OSX, we'll depend on the XCode-provided
 # default compiler
 if [ "$(uname)" = "Linux" ] ; then
@@ -50,8 +43,6 @@ export CC=gcc-5
 ./bootstrap.sh
 mkdir -p bin
 mv build/Release/route-annotatord bin
-
-kill ${SIMPLESERVERPID}
 
 # Start it up
 cat $app_dir/deploy/route-annotator.conf | $bp_dir/common/replacer.sh > /etc/init/route-annotator.conf

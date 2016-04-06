@@ -745,7 +745,7 @@
                     "Ref": "MaxSize"
                 },
                 "HealthCheckType": "ELB",
-                "HealthCheckGracePeriod": "600",
+                "HealthCheckGracePeriod": "1200",
                 "TerminationPolicies": [
                     "NewestInstance"
                 ],
