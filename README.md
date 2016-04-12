@@ -107,11 +107,11 @@ The current response structure is:
 ```
 
 # TODO
-  - [ ] Consolidate consecutive node id pairs that are on the same way and only report tags once (include the range of node indexes that are part of each way in the response)
+  - [x] Consolidate consecutive node id pairs that are on the same way and only report tags once (include the range of node indexes that are part of each way in the response)
   - [ ] Figure out how to handle node pairs that belong to multiple ways
   - [x] Perhaps implement an RTree, and allow the matching to be done by lon/lat instead of requiring node ids (DONE: you can now search by coordinate)
   - [ ] Gracefully handle missing pairs, so that we can honour a request from a .OSM file that is slightly out of sync with the one we're serving
   - [ ] Startup progress indicator
   - [ ] Parallelize OSM parsing at the start
   - [ ] Improve the `nodepair_t` hash function to improve performance
-  - [x] Figure out why we can only handl 123 characters on the URL (it was `int` vs `ulong_long`)
+  - [x] Figure out why we can only handle 123 characters on the URL (it was `int` vs `ulong_long`)
