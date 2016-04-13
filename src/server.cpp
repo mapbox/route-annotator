@@ -12,6 +12,7 @@
 #include <vector>
 
 #ifndef NDEBUG
+#include <iostream>
 #define BOOST_SPIRIT_X3_DEBUG
 #endif
 
@@ -23,8 +24,6 @@
 
 #include <errno.h>
 #include <signal.h>
-
-#include <boost/timer/timer.hpp>
 
 #include "annotator.hpp"
 #include "types.hpp"
@@ -142,6 +141,15 @@ int main(int argc, char **argv) try
         int idx = 0;
         for (const auto way_id : annotated_route)
         {
+            if (way_id == INVALID_WAYID)
+            {
+                // if we don't set the value in j_array, it will
+                // default to `null`, which is what we want
+                // in this case
+                idx++;
+                continue;
+            }
+
             if (way_indexes.find(way_id) == way_indexes.end())
             {
                 seen_ways.push_back(way_id);
