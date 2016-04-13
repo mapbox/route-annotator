@@ -36,7 +36,7 @@ LINK_DIRECTORIES(${Casablanca_LIBRARIES_DIRS})
 
 SET(libosmium_INCLUDE_DIRS "third_party/libosmium/include")
 
-ADD_EXECUTABLE(route-annotatord src/server.cpp src/annotator.cpp src/database.cpp)
+ADD_EXECUTABLE(route-annotatord src/server.cpp src/annotator.cpp src/database.cpp src/extractor.cpp)
 TARGET_LINK_LIBRARIES(route-annotatord ${Casablanca_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Casablanca_LIBRARIES} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${EXPAT_LIBRARIES} ${BZIP2_LIBRARIES} ${THREADS_LIBRARIES})
 TARGET_INCLUDE_DIRECTORIES(route-annotatord SYSTEM PUBLIC ${Casablanca_INCLUDE_DIRS} ${libosmium_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} ${EXPAT_INCLUDE_DIR} ${BZIP2_INCLUDE_DIR})
 

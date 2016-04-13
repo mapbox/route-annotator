@@ -135,7 +135,7 @@ std::string RouteAnnotator::get_tag_value(const std::size_t index)
     return db.getstring(db.key_value_pairs[index].second);
 }
 
-tagrange_t RouteAnnotator::get_tag_range(const std::size_t index)
+tagrange_t RouteAnnotator::get_tag_range(const wayid_t way_id)
 {
-    return db.way_tag_ranges[index];
+    return db.way_tag_ranges[way_id];
 }
