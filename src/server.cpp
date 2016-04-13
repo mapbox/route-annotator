@@ -164,7 +164,7 @@ int main(int argc, char **argv) try
                 j_array[idx++] = static_cast<int>(way_indexes[way_id]);
             }
 
-            response["tagset_indexes"] = j_array;
+            response["way_indexes"] = j_array;
 
             web::json::value waydata = web::json::value::array(seen_ways.size());
 
@@ -182,7 +182,7 @@ int main(int argc, char **argv) try
                 waydata[idx++] = tags;
             }
 
-            response["way_tags"] = waydata;
+            response["ways_seen"] = waydata;
 
             // Send the reply back
             request.reply(web::http::status_codes::OK, response);
