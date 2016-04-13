@@ -1,5 +1,5 @@
 /************************************************************
- * Route Annotator
+ * Route Annotator HTTP server
  *
  * This HTTP service takes a list of OSM nodeids or coordinates,
  * and returns all the tags on the ways that those nodeids
@@ -8,21 +8,8 @@
  * When using coordinates, they must be within 1m of the coordinates
  * loaded from the OSM file.
  ************************************************************/
-#include <cstddef>
-#include <cstdlib>
-#include <cstdio>
-
-#include <string>
 #include <vector>
 #include <future>
-#include <tuple>
-#include <utility>
-#include <iterator>
-#include <stdexcept>
-#include <system_error>
-#include <iostream>
-#include <algorithm>
-#include <unordered_set>
 
 #ifndef NDEBUG
 #define BOOST_SPIRIT_X3_DEBUG
@@ -37,19 +24,10 @@
 #include <errno.h>
 #include <signal.h>
 
-// For iterating over pairs of nodes/coordinates
-#include <boost/iterator/zip_iterator.hpp>
-#include <boost/tuple/tuple.hpp>
-
-// Used to constrct the RTree for finding nodes near lon/lat
-#include <boost/geometry.hpp>
-#include <boost/geometry/core/cs.hpp>
-#include <boost/geometry/geometries/point.hpp>
-#include <boost/geometry/index/rtree.hpp>
-
 #include <boost/timer/timer.hpp>
 
-#include "route-annotator.hpp"
+#include "types.hpp"
+#include "annotator.hpp"
 
 // Fulfilled promise signals clean shutdown
 static std::promise<void> signal_shutdown;
@@ -96,11 +74,13 @@ int main(int argc, char **argv) try
             std::fprintf(stderr, "%s\t%s\t%s\n", request.method().c_str(), path.c_str(),
                          query.c_str());
 
+            // Step 1 - parse the URL
             if (path == "/")
             {
                 request.reply(web::http::status_codes::OK);
                 return;
             }
+            // If a list of OSM node ids is supplied, convert it to internal nodeids
             else if (path.find("/nodelist/") == 0)
             {
 
@@ -118,6 +98,8 @@ int main(int argc, char **argv) try
 
                 internal_nodeids = annotator.external_to_internal(external_nodeids);
             } 
+            // If a list of coordinates is supplied, convert it to a list of
+            // internal node ids
             else if (path.find("/coordlist/") == 0)
             {
                 const auto coordlist_parser =
@@ -125,7 +107,6 @@ int main(int argc, char **argv) try
                     (boost::spirit::x3::double_ >> "," >> boost::spirit::x3::double_) % ";";
                 std::vector<double> coordinates;
 
-                // Both url forms failed, so we'll just return an error message
                 if (!parse(begin(path), end(path), coordlist_parser, coordinates) ||
                     coordinates.size() < 2 || coordinates.size() % 2 != 0)
                 {
@@ -154,9 +135,12 @@ int main(int argc, char **argv) try
                 request.reply(web::http::status_codes::BadRequest, response);
             }
 
-            web::json::value response;
 
+            // Do the actual annotation
             const auto annotated_route = annotator.annotateRoute(internal_nodeids);
+
+            // Now, construct the response in JSON
+            web::json::value response;
 
             web::json::value j_array = web::json::value::array(annotated_route.tagset_offset_list.size());
             int idx = 0;
