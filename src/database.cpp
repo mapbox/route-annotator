@@ -2,9 +2,9 @@
 
 void Database::compact()
 {
-    rtree = std::make_unique<
-        boost::geometry::index::rtree<value_t, boost::geometry::index::rstar<8>>>(
-        used_nodes_list.begin(), used_nodes_list.end());
+    rtree =
+        std::make_unique<boost::geometry::index::rtree<value_t, boost::geometry::index::rstar<8>>>(
+            used_nodes_list.begin(), used_nodes_list.end());
 
     // Tricks to free memory, swap out data with empty versions
     // This frees the memory.  shrink_to_fit doesn't guarantee that.
@@ -15,7 +15,7 @@ void Database::compact()
     string_data.shrink_to_fit();
     string_offsets.shrink_to_fit();
 
-    tagset_list.shrink_to_fit();
+    way_tag_ranges.shrink_to_fit();
     key_value_pairs.shrink_to_fit();
     string_offsets.shrink_to_fit();
 }
@@ -40,8 +40,8 @@ std::uint32_t Database::addstring(const char *str)
         std::copy(str, str + string_length, std::back_inserter(string_data));
         BOOST_ASSERT(string_data.size() < std::numeric_limits<std::uint32_t>::max());
         BOOST_ASSERT(string_data.size() >= string_length);
-        string_offsets.emplace_back(
-            static_cast<std::uint32_t>(string_data.size()) - string_length, string_length);
+        string_offsets.emplace_back(static_cast<std::uint32_t>(string_data.size()) - string_length,
+                                    string_length);
         idx = string_index.find(str);
     }
     BOOST_ASSERT(idx->second < std::numeric_limits<std::uint32_t>::max());
@@ -52,22 +52,22 @@ void Database::dump()
 {
     std::cout << "String data is " << (string_data.capacity() * sizeof(char))
               << " Used: " << (string_data.size() * sizeof(char)) << "\n";
-    std::cout << "tagset = Allocated "
-              << (tagset_list.capacity() * sizeof(uint32_pairvector_t::value_type))
-              << "  Used: " << (tagset_list.size() * sizeof(uint32_pairvector_t::value_type))
-              << "\n";
-    std::cout << "keyvalue = Allocated "
-              << (key_value_pairs.capacity() * sizeof(uint32_pairvector_t::value_type))
+    std::cout << "way_tag_ranges = Allocated "
+              << (way_tag_ranges.capacity() * sizeof(decltype(way_tag_ranges)::value_type))
               << "  Used: "
-              << (key_value_pairs.size() * sizeof(uint32_pairvector_t::value_type)) << "\n";
+              << (way_tag_ranges.size() * sizeof(decltype(way_tag_ranges)::value_type)) << "\n";
+    std::cout << "keyvalue = Allocated "
+              << (key_value_pairs.capacity() * sizeof(decltype(key_value_pairs)::value_type))
+              << "  Used: "
+              << (key_value_pairs.size() * sizeof(decltype(key_value_pairs)::value_type)) << "\n";
     std::cout << "stringoffset = Allocated "
-              << (string_offsets.capacity() * sizeof(uint32_pairvector_t::value_type))
-              << "  Used: " << (string_offsets.size() * sizeof(uint32_pairvector_t::value_type))
-              << "\n";
+              << (string_offsets.capacity() * sizeof(decltype(string_offsets)::value_type))
+              << "  Used: "
+              << (string_offsets.size() * sizeof(decltype(string_offsets)::value_type)) << "\n";
 
-    std::cout << "pair_tagset_map = Allocated "
-              << (pair_tagset_map.size() *
-                  (sizeof(uint32_pairvector_t::value_type) + sizeof(tagsetid_t)))
-              << "  Load factor: " << pair_tagset_map.load_factor()
-              << " Buckets: " << pair_tagset_map.bucket_count() << "\n";
+    std::cout << "pair_way_map = Allocated "
+              << (pair_way_map.size() *
+                  (sizeof(decltype(pair_way_map)::value_type) + sizeof(wayid_t)))
+              << "  Load factor: " << pair_way_map.load_factor()
+              << " Buckets: " << pair_way_map.bucket_count() << "\n";
 }

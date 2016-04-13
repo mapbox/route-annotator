@@ -1,8 +1,8 @@
 #pragma once
 // Basic libosmium includes
-#include <osmium/osm/types.hpp>
 #include <osmium/handler.hpp>
 #include <osmium/io/file.hpp>
+#include <osmium/osm/types.hpp>
 #include <osmium/visitor.hpp>
 // We take any input that libosmium supports (XML, PBF, osm.bz2, etc)
 #include <osmium/io/any_input.hpp>
@@ -15,8 +15,8 @@
 #include <boost/iterator/zip_iterator.hpp>
 #include <boost/tuple/tuple.hpp>
 
-#include "types.hpp"
 #include "database.hpp"
+#include "types.hpp"
 
 /**
  * The handler for libosmium.  This class basically contains one callback that's called by
@@ -27,7 +27,7 @@
 struct Extractor final : osmium::handler::Handler
 {
 
-    Extractor(Database & d) : db(d) { }
+    Extractor(Database &d) : db(d) {}
 
     /**
      * Handler for ways as they are seen
@@ -73,10 +73,10 @@ struct Extractor final : osmium::handler::Handler
                                             db.addstring(std::to_string(way.id()).c_str()));
             BOOST_ASSERT(db.key_value_pairs.size() < std::numeric_limits<std::uint32_t>::max());
             const auto tagend = static_cast<std::uint32_t>(db.key_value_pairs.size() - 1);
-            db.tagset_list.emplace_back(tagstart, tagend);
+            db.way_tag_ranges.emplace_back(tagstart, tagend);
 
-            BOOST_ASSERT(db.tagset_list.size() < std::numeric_limits<tagsetid_t>::max());
-            const auto tagset_id = static_cast<tagsetid_t>(db.tagset_list.size() - 1);
+            BOOST_ASSERT(db.way_tag_ranges.size() < std::numeric_limits<wayid_t>::max());
+            const auto way_id = static_cast<wayid_t>(db.way_tag_ranges.size() - 1);
 
             // This iterates over each pair of nodes.
             // Given the nodes 1,2,3,4,5,6
@@ -86,9 +86,8 @@ struct Extractor final : osmium::handler::Handler
                     boost::make_tuple(way.nodes().cbegin(), way.nodes().cbegin() + 1)),
                 boost::make_zip_iterator(
                     boost::make_tuple(way.nodes().cend() - 1, way.nodes().cend())),
-                [this, tagset_id, forward,
-                 reverse](boost::tuple<const osmium::NodeRef, const osmium::NodeRef> pair)
-                {
+                [this, way_id, forward,
+                 reverse](boost::tuple<const osmium::NodeRef, const osmium::NodeRef> pair) {
                     try
                     {
                         point_t a{pair.get<0>().location().lon(), pair.get<0>().location().lat()};
@@ -126,13 +125,13 @@ struct Extractor final : osmium::handler::Handler
 
                         if (forward)
                         {
-                            db.pair_tagset_map.emplace(std::make_pair(internal_a_id, internal_b_id),
-                                                       tagset_id);
+                            db.pair_way_map.emplace(std::make_pair(internal_a_id, internal_b_id),
+                                                    way_id);
                         }
                         if (reverse)
                         {
-                            db.pair_tagset_map.emplace(std::make_pair(internal_b_id, internal_a_id),
-                                                       tagset_id);
+                            db.pair_way_map.emplace(std::make_pair(internal_b_id, internal_a_id),
+                                                    way_id);
                         }
                     }
                     catch (const osmium::invalid_location &e)
@@ -144,6 +143,6 @@ struct Extractor final : osmium::handler::Handler
         }
     }
 
-    private:
-        Database &db;
+  private:
+    Database &db;
 };
