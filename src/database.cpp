@@ -20,7 +20,7 @@ void Database::compact()
     string_offsets.shrink_to_fit();
 }
 
-std::string Database::getstring(const std::size_t stringid)
+std::string Database::getstring(const stringid_t stringid)
 {
     auto stringinfo = string_offsets[stringid];
     std::string result(string_data.begin() + stringinfo.first,
@@ -28,7 +28,7 @@ std::string Database::getstring(const std::size_t stringid)
     return result;
 }
 
-std::uint32_t Database::addstring(const char *str)
+stringid_t Database::addstring(const char *str)
 {
     auto idx = string_index.find(str);
     if (idx == string_index.end())
@@ -42,7 +42,8 @@ std::uint32_t Database::addstring(const char *str)
         BOOST_ASSERT(string_data.size() >= string_length);
         string_offsets.emplace_back(static_cast<std::uint32_t>(string_data.size()) - string_length,
                                     string_length);
-        idx = string_index.find(str);
+        // Return the position we know we just added out string at
+        return static_cast<std::uint32_t>(string_index.size() - 1);
     }
     BOOST_ASSERT(idx->second < std::numeric_limits<std::uint32_t>::max());
     return static_cast<std::uint32_t>(idx->second);

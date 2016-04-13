@@ -91,7 +91,8 @@ RouteAnnotator::external_to_internal(const std::vector<external_nodeid_t> &exter
     // Convert external node ids into internal ones
     std::vector<internal_nodeid_t> results;
     std::for_each(external_nodeids.begin(), external_nodeids.end(),
-                  [this, &results](const external_nodeid_t n) {
+                  [this, &results](const external_nodeid_t n)
+                  {
                       const auto internal_node_id = db.external_internal_map.find(n);
                       if (internal_node_id == db.external_internal_map.end())
                       {
@@ -135,7 +136,4 @@ std::string RouteAnnotator::get_tag_value(const std::size_t index)
     return db.getstring(db.key_value_pairs[index].second);
 }
 
-tagrange_t RouteAnnotator::get_tag_range(const wayid_t way_id)
-{
-    return db.way_tag_ranges[way_id];
-}
+tagrange_t RouteAnnotator::get_tag_range(const wayid_t way_id) { return db.way_tag_ranges[way_id]; }

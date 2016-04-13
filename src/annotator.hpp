@@ -29,8 +29,7 @@ struct RouteAnnotator
      * @return a vector of internal node ids.  Will return INVALID_INTERNAL_NODEID
      *     for coordinates that couldn't be matched.
      */
-    std::vector<internal_nodeid_t> 
-        coordinates_to_internal(const std::vector<point_t> &points);
+    std::vector<internal_nodeid_t> coordinates_to_internal(const std::vector<point_t> &points);
 
     /**
      * Convert OSM node ids (64bit) into internal node ids (32 bit).
@@ -40,7 +39,7 @@ struct RouteAnnotator
      *     for coordinates that couldn't be matched.
      */
     std::vector<internal_nodeid_t>
-        external_to_internal(const std::vector<external_nodeid_t> &external_nodeids);
+    external_to_internal(const std::vector<external_nodeid_t> &external_nodeids);
 
     /**
      * Gets the tags for a route

@@ -61,7 +61,8 @@ void Extractor::way(const osmium::Way &way)
                 boost::make_tuple(way.nodes().cbegin(), way.nodes().cbegin() + 1)),
             boost::make_zip_iterator(boost::make_tuple(way.nodes().cend() - 1, way.nodes().cend())),
             [this, way_id, forward,
-             reverse](boost::tuple<const osmium::NodeRef, const osmium::NodeRef> pair) {
+             reverse](boost::tuple<const osmium::NodeRef, const osmium::NodeRef> pair)
+            {
                 try
                 {
                     point_t a{pair.get<0>().location().lon(), pair.get<0>().location().lat()};

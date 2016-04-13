@@ -16,8 +16,7 @@ static constexpr internal_nodeid_t INVALID_INTERNAL_NODEID =
 static constexpr wayid_t INVALID_WAYID = std::numeric_limits<wayid_t>::max();
 
 typedef boost::geometry::model::
-    point<double, 2, boost::geometry::cs::spherical_equatorial<boost::geometry::degree>>
-        point_t;
+    point<double, 2, boost::geometry::cs::spherical_equatorial<boost::geometry::degree>> point_t;
 typedef std::pair<point_t, internal_nodeid_t> value_t;
 
 // Data types for our lookup tables
@@ -27,6 +26,9 @@ typedef std::unordered_map<external_nodeid_t, internal_nodeid_t> external_intern
 
 typedef std::vector<wayid_t> annotated_route_t;
 
+// Every unique string gets an ID of this type
+typedef std::uint32_t stringid_t;
+
 // A way has several tags.  The tagrange is the index of the
 // first tag table entry, second is the index of the last
 // tag table entry
@@ -34,10 +36,10 @@ typedef std::pair<std::uint32_t, std::uint32_t> tagrange_t;
 
 // Pairs of string ids in the string table.  first = string ID
 // of the key, second = string ID of the value
-typedef std::pair<std::uint32_t, std::uint32_t> keyvalue_index_t;
+typedef std::pair<stringid_t, stringid_t> keyvalue_index_t;
 
 // Indexes of strings in the char buffer.  first = first character
-// position, second = last character position
+// position, second = length of string
 typedef std::pair<std::uint32_t, std::uint32_t> stringoffset_t;
 
 // Custom hashing functions for our data types to use in standard containers (sets, maps, etc).

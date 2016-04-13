@@ -18,7 +18,7 @@ struct Extractor final : osmium::handler::Handler
     /**
      * Constructs an extractor.  It requres a Database object it
      * can dump data into.
-     * 
+     *
      * @param d the Database object where everything will end up
      */
     Extractor(Database &d) : db(d) {}
