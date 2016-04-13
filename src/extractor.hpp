@@ -21,7 +21,7 @@ struct Extractor final : osmium::handler::Handler
      *
      * @param d the Database object where everything will end up
      */
-    Extractor(Database &d) : db(d) {}
+    Extractor(const std::string &osmfilename, Database &d);
 
     /**
      * Osmium way handler - called once for each way.

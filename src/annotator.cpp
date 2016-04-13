@@ -1,64 +1,27 @@
 #include "annotator.hpp"
 #include "extractor.hpp"
 
-#include <cstdio>
-
-// Basic libosmium includes
-#include <osmium/handler.hpp>
-#include <osmium/io/file.hpp>
-#include <osmium/osm/types.hpp>
-#include <osmium/visitor.hpp>
-// We take any input that libosmium supports (XML, PBF, osm.bz2, etc)
-#include <osmium/io/any_input.hpp>
-
-// Needed for lon/lat lookups inside way handler
-#include <osmium/handler/node_locations_for_ways.hpp>
-#include <osmium/index/map/all.hpp>
+#include <cstddef>
 
 // For boost RTree
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
-// Node indexing types for libosmium
-// We need these because we need access to the lon/lat for the noderefs inside the way
-// callback in our handler.
-typedef osmium::index::map::Dummy<osmium::unsigned_object_id_type, osmium::Location> index_neg_type;
-typedef osmium::index::map::SparseMemArray<osmium::unsigned_object_id_type, osmium::Location>
-    index_pos_type;
-// typedef osmium::index::map::DenseMmapArray<osmium::unsigned_object_id_type, osmium::Location>
-// index_pos_type;
-typedef osmium::handler::NodeLocationsForWays<index_pos_type, index_neg_type> location_handler_type;
+#include <boost/geometry/strategies/spherical/distance_haversine.hpp>
+//#include <boost/log/trivial.hpp>
 
-RouteAnnotator::RouteAnnotator(const std::string &osmfilename)
-{
-    Extractor extractor(db);
-    std::cerr << "Parsing " << osmfilename << " ... " << std::flush;
-    osmium::io::File osmfile{osmfilename};
-    osmium::io::Reader fileReader(osmfile,
-                                  osmium::osm_entity_bits::way | osmium::osm_entity_bits::node);
-    int fd = open("nodes.cache", O_RDWR | O_CREAT, 0666);
-    if (fd == -1)
-    {
-        throw std::runtime_error(strerror(errno));
-    }
-    index_pos_type index_pos{fd};
-    index_neg_type index_neg;
-    location_handler_type location_handler(index_pos, index_neg);
-    location_handler.ignore_errors();
-    osmium::apply(fileReader, location_handler, extractor);
-    std::cerr << "done\n";
-    std::cerr << "Number of node pairs indexed: " << db.pair_way_map.size() << "\n";
-    std::cerr << "Number of ways indexed: " << db.way_tag_ranges.size() << "\n";
-
-    std::cerr << "Constructing RTree ... " << std::flush;
-    db.compact();
-    std::cerr << "done\n" << std::flush;
-    db.dump();
-}
+RouteAnnotator::RouteAnnotator(const Database &db) : db(db) {}
 
 std::vector<internal_nodeid_t>
 RouteAnnotator::coordinates_to_internal(const std::vector<point_t> &points)
 {
+
+    static const boost::geometry::strategy::distance::haversine<double> haversine(6372795.0);
+    static const double MAX_DISTANCE = 1;
+
+    if (!db.rtree)
+        throw std::runtime_error("RTree is null - need to call compact() on database before use");
+
     std::vector<internal_nodeid_t> internal_nodeids;
     for (const auto &point : points)
     {
@@ -70,9 +33,16 @@ RouteAnnotator::coordinates_to_internal(const std::vector<point_t> &points)
 
         // If we got exactly one hit (we should), append it to our nodeids list, if it
         // was within 1m
-        // TODO: verify that we're actually testing 1m accuracy here
+        /*
+        BOOST_LOG_TRIVIAL(debug) << "Distance from " << point.get<0>() << "," << point.get<1>()
+                                 << " to  " << rtree_results[0].first.get<0>() << ","
+                                 << rtree_results[0].first.get<1>() << " is "
+                                 << boost::geometry::distance(point, rtree_results[0].first,
+                                                              haversine)
+                                 << "\n";
+        */
         if (rtree_results.size() == 1 &&
-            boost::geometry::distance(point, rtree_results[0].first) < 1)
+            boost::geometry::distance(point, rtree_results[0].first, haversine) < MAX_DISTANCE)
         {
             internal_nodeids.push_back(rtree_results[0].second);
         }
@@ -91,8 +61,7 @@ RouteAnnotator::external_to_internal(const std::vector<external_nodeid_t> &exter
     // Convert external node ids into internal ones
     std::vector<internal_nodeid_t> results;
     std::for_each(external_nodeids.begin(), external_nodeids.end(),
-                  [this, &results](const external_nodeid_t n)
-                  {
+                  [this, &results](const external_nodeid_t n) {
                       const auto internal_node_id = db.external_internal_map.find(n);
                       if (internal_node_id == db.external_internal_map.end())
                       {

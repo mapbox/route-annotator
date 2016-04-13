@@ -55,7 +55,7 @@ struct Database
      *   addstring earlier
      * @return the requested string
      */
-    std::string getstring(const stringid_t stringid);
+    std::string getstring(const stringid_t stringid) const;
 
     /**
      * Builds the RTree and reclaims memory by discarding temporary data
@@ -67,7 +67,7 @@ struct Database
     /**
      * Dumps some info about what's in our database
      */
-    void dump();
+    void dump() const;
 
     // A temporary list of the nodes that we actually used
     std::vector<value_t> used_nodes_list;

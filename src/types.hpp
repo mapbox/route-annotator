@@ -16,7 +16,8 @@ static constexpr internal_nodeid_t INVALID_INTERNAL_NODEID =
 static constexpr wayid_t INVALID_WAYID = std::numeric_limits<wayid_t>::max();
 
 typedef boost::geometry::model::
-    point<double, 2, boost::geometry::cs::spherical_equatorial<boost::geometry::degree>> point_t;
+    point<double, 2, boost::geometry::cs::spherical_equatorial<boost::geometry::degree>>
+        point_t;
 typedef std::pair<point_t, internal_nodeid_t> value_t;
 
 // Data types for our lookup tables

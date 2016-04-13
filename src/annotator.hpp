@@ -19,7 +19,7 @@ struct RouteAnnotator
      *
      * @param osmfilename the name of the OSM file to load
      */
-    RouteAnnotator(const std::string &osmfilename);
+    RouteAnnotator(const Database &db);
 
     /**
      * Convert a list of lon/lat coordinates into internal
@@ -78,5 +78,5 @@ struct RouteAnnotator
 
   private:
     // This is where all the data lives
-    Database db;
+    const Database &db;
 };

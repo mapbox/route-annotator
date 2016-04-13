@@ -20,7 +20,7 @@ void Database::compact()
     string_offsets.shrink_to_fit();
 }
 
-std::string Database::getstring(const stringid_t stringid)
+std::string Database::getstring(const stringid_t stringid) const
 {
     auto stringinfo = string_offsets[stringid];
     std::string result(string_data.begin() + stringinfo.first,
@@ -49,7 +49,7 @@ stringid_t Database::addstring(const char *str)
     return static_cast<std::uint32_t>(idx->second);
 }
 
-void Database::dump()
+void Database::dump() const
 {
     std::cout << "String data is " << (string_data.capacity() * sizeof(char))
               << " Used: " << (string_data.size() * sizeof(char)) << "\n";
