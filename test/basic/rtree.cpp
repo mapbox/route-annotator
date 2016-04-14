@@ -10,20 +10,29 @@ BOOST_AUTO_TEST_SUITE(rtree_test)
 // Verify that the bearing-bounds checking function behaves as expected
 BOOST_AUTO_TEST_CASE(rtree_basic_test)
 {
-    BOOST_CHECK_EQUAL(true, true);
-
     Database db;
 
-    // point_t a{1, 1};
     db.used_nodes_list.emplace_back(point_t{1, 1}, 73);
     db.compact();
     BOOST_CHECK_EQUAL(db.rtree->size(), 1);
 }
 
+BOOST_AUTO_TEST_CASE(rtree_not_initialized)
+{
+    Database db;
+
+    static const internal_nodeid_t TESTNODE{73};
+
+    db.used_nodes_list.emplace_back(point_t{1, 1}, TESTNODE);
+
+    RouteAnnotator annotator(db);
+
+    std::vector<point_t> points{point_t{1, 1}};
+    BOOST_CHECK_THROW(annotator.coordinates_to_internal(points), std::runtime_error);
+}
+
 BOOST_AUTO_TEST_CASE(rtree_radius_test)
 {
-    BOOST_CHECK_EQUAL(true, true);
-
     Database db;
 
     static const internal_nodeid_t TESTNODE{73};
