@@ -56,6 +56,33 @@ Extractor::Extractor(const std::string &osmfilename, Database &db) : db(db)
     db.dump();
 }
 
+Extractor::Extractor(const char * buffer, std::size_t buffersize, const std::string &format, Database &db) : db(db)
+{
+    std::cerr << "Parsing OSM buffer in format " << format << " ... " << std::flush;
+    osmium::io::File osmfile{buffer, buffersize, format};
+    osmium::io::Reader fileReader(osmfile,
+                                  osmium::osm_entity_bits::way | osmium::osm_entity_bits::node);
+    int fd = open("nodes.cache", O_RDWR | O_CREAT, 0666);
+    if (fd == -1)
+    {
+        throw std::runtime_error(strerror(errno));
+    }
+    index_pos_type index_pos{fd};
+    index_neg_type index_neg;
+    location_handler_type location_handler(index_pos, index_neg);
+    location_handler.ignore_errors();
+    osmium::apply(fileReader, location_handler, *this);
+    std::cerr << "done\n";
+    std::cerr << "Number of node pairs indexed: " << db.pair_way_map.size() << "\n";
+    std::cerr << "Number of ways indexed: " << db.way_tag_ranges.size() << "\n";
+
+    std::cerr << "Constructing RTree ... " << std::flush;
+    db.compact();
+    std::cerr << "done\n" << std::flush;
+    db.dump();
+}
+
+
 void Extractor::way(const osmium::Way &way)
 {
 

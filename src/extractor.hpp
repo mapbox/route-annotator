@@ -24,6 +24,17 @@ struct Extractor final : osmium::handler::Handler
     Extractor(const std::string &osmfilename, Database &d);
 
     /**
+     * Constructs an extractor from in-memory OSM XML data.
+     * It requres a Database object it can dump data into.
+     *
+     * @param buffer a character buffer holding the osmium parseable data
+     * @param buffersize the buffer size (duh)
+     * @param format the format of the buffer for libosmium.  One of
+     *     pbf, xml, opl, json, o5m, osm, osh or osc
+     */
+    Extractor(const char *buffer, std::size_t buffersize, const std::string &format, Database &d);
+
+    /**
      * Osmium way handler - called once for each way.
      *
      * @param way the current way being processed

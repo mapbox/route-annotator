@@ -22,9 +22,7 @@ void Database::compact()
 
 std::string Database::getstring(const stringid_t stringid) const
 {
-    if (stringid >= string_offsets.size())
-        throw std::runtime_error("Invalid string ID");
-
+    BOOST_ASSERT(stringid < string_offsets.size());
     auto stringinfo = string_offsets[stringid];
     std::string result(string_data.begin() + stringinfo.first,
                        string_data.begin() + stringinfo.first + stringinfo.second);
