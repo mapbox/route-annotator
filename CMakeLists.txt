@@ -3,7 +3,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.0.2 FATAL_ERROR)
 PROJECT(route-annotator VERSION 0.0.1 LANGUAGES C CXX)
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Weverything")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 elseif(UNIX) # This is for OSX
   # Prefer a homebrew version of OpenSSL over the one in /usr/lib
   file(GLOB OPENSSL_ROOT_DIR /usr/local/Cellar/openssl/*)
