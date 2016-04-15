@@ -1,0 +1,21 @@
+{
+  "name": "route_annotator",
+  "version": "1.0.0",
+  "description": "Bindings for route-annotator",
+  "keywords": [
+    "addon",
+    "native",
+    "module"
+  ],
+  "author": "Mapbox",
+  "license": "ISC",
+  "main": "index.js",
+  "scripts": {
+    "install": "ncmake --build --config Release",
+    "test": "node -p \"require('./index').doesItWork()\""
+  },
+  "devDependencies": {
+    "nan": "^2.2.1",
+    "node-cmake": "^1.2.0"
+  }
+}
