@@ -12,7 +12,7 @@
   "main": "index.js",
   "scripts": {
     "install": "ncmake --build --config Release",
-    "test": "node -p \"require('./index').doesItWork()\""
+    "test": "node -p \"const pkg = require('./index'); const annotator = new pkg.Annotator(42); console.log(annotator); console.log(annotator.getValue())\""
   },
   "devDependencies": {
     "nan": "^2.2.1",
