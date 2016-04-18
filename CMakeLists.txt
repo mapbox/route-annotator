@@ -24,7 +24,7 @@ FIND_PACKAGE(ZLIB)
 FIND_PACKAGE(BZip2)
 FIND_PACKAGE(EXPAT)
 
-FIND_PACKAGE(Boost 1.59.0 REQUIRED system thread filesystem chrono)
+FIND_PACKAGE(Boost 1.58.0 REQUIRED system thread filesystem chrono)
 ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK -DBOOST_SPIRIT_USE_PHOENIX_V3 -DBOOST_RESULT_OF_USE_DECLTYPE)
 
 # External dependency: run ./deps.sh

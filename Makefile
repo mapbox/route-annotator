@@ -24,4 +24,4 @@ watch:
 clean:
 	@${RM} -rf ${BUILD_DIR}
 
-.PHONE: all watch clean test
+.PHONE: all watch clean

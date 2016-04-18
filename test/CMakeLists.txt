@@ -12,7 +12,7 @@ add_executable(basic-tests
 # FindPackage below overwrites Boost_LIBRARIES
 set(AllBoostLibrariesExceptUnitTest ${Boost_LIBRARIES})
 
-find_package(Boost 1.59.0 REQUIRED COMPONENTS unit_test_framework)
+find_package(Boost 1.58.0 REQUIRED COMPONENTS unit_test_framework)
 FIND_PACKAGE(Threads REQUIRED)
 FIND_PACKAGE(ZLIB)
 FIND_PACKAGE(BZip2)
