@@ -25,7 +25,7 @@ class Annotator final : public Nan::ObjectWrap
 
         SetPrototypeMethod(fnTp, "annotateRouteFromNodeIds", annotateRouteFromNodeIds);
 
-        auto fn = Nan::GetFunction(fnTp).ToLocalChecked();
+        const auto fn = Nan::GetFunction(fnTp).ToLocalChecked();
 
         constructor().Reset(fn);
 
@@ -53,7 +53,7 @@ class Annotator final : public Nan::ObjectWrap
                 Database database;
                 Extractor extractor{extract, database};
 
-                auto *self = new Annotator(std::move(database));
+                auto *const self = new Annotator(std::move(database));
 
                 self->Wrap(info.This());
             }
@@ -81,27 +81,45 @@ class Annotator final : public Nan::ObjectWrap
     /* Member function for Javascript object: [nodeId, nodeId] -> [dummy, dummy] */
     static NAN_METHOD(annotateRouteFromNodeIds)
     {
+        auto *const self = Nan::ObjectWrap::Unwrap<Annotator>(info.Holder());
+
         // TODO(daniel-j-h): what about TypedArrays? IsArray() not superset of IsTypedArray()
         // https://v8docs.nodesource.com/node-4.2/dc/d0a/classv8_1_1_value.html
         if (info.Length() != 1 || !info[0]->IsArray())
             return Nan::ThrowTypeError("Array of node ids expected");
 
-        auto *self = Nan::ObjectWrap::Unwrap<Annotator>(info.Holder());
+        const auto jsNodeIds = info[0].As<v8::Array>();
 
-        const auto nodeIds = info[0].As<v8::Array>();
+        std::vector<external_nodeid_t> externalIds(jsNodeIds->Length());
 
-        for (std::uint32_t i{0}; i < nodeIds->Length(); ++i)
+        for (std::size_t i{0}; i < jsNodeIds->Length(); ++i)
         {
-            auto item = Nan::Get(nodeIds, i).ToLocalChecked();
+            const auto nodeId = Nan::Get(jsNodeIds, i).ToLocalChecked();
 
-            if (!item->IsNumber())
+            if (!nodeId->IsNumber())
                 return Nan::ThrowTypeError("Array of number type expected");
+
+            externalIds[i] = Nan::To<std::int64_t>(nodeId).FromJust();
+            // TODO(daniel-j-h): Why is there no conversion to uint64_t?
+            // https://github.com/nodejs/nan/blob/master/doc/converters.md#nanto
+            // externalIds[i] = Nan::To<external_nodeid_t>(nodeId).FromJust();
         }
 
-        const constexpr auto length = 1u;
-        auto annotated = Nan::New<v8::Array>(length);
-        (void)Nan::Set(annotated, 0, Nan::New<v8::Number>(10));
-        (void)Nan::Set(annotated, 1, Nan::New<v8::Number>(20));
+        // Note: memory for externalIds could be reclaimed after the translation to internalIds
+        const auto internalIds = self->annotator.external_to_internal(externalIds);
+        const auto wayIds = self->annotator.annotateRoute(internalIds);
+
+        const auto annotated = Nan::New<v8::Array>(wayIds.size());
+
+        for (std::size_t i{0}; i < wayIds.size(); ++i)
+        {
+            const auto wayId = wayIds[i];
+
+            if (wayId == INVALID_WAYID)
+                (void)Nan::Set(annotated, i, Nan::Null());
+            else
+                (void)Nan::Set(annotated, i, Nan::New<v8::Number>(wayIds[i]));
+        }
 
         info.GetReturnValue().Set(annotated);
     }
