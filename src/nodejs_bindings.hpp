@@ -20,6 +20,12 @@ class Annotator final : public Nan::ObjectWrap
     /* Member function for Javascript object: [nodeId, nodeId] -> [dummy, dummy] */
     static NAN_METHOD(annotateRouteFromNodeIds);
 
+    /* Member function for Javascript object: [[lon, lat], [lon, lat]] -> [dummy, dummy] */
+    static NAN_METHOD(annotateRouteFromLonLats);
+
+    /* Member function for Javascript object: wayId -> [[key, value], [key, value]] */
+    static NAN_METHOD(getAllTagsForWayId);
+
     /* Thread-safe singleton constructor */
     static Nan::Persistent<v8::Function> &constructor();
 

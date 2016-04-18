@@ -9,6 +9,8 @@
 
 #include "nodejs_bindings.hpp"
 
+#include <boost/numeric/conversion/cast.hpp>
+
 NAN_MODULE_INIT(Annotator::Init)
 {
     const auto whoami = Nan::New("Annotator").ToLocalChecked();
@@ -18,6 +20,8 @@ NAN_MODULE_INIT(Annotator::Init)
     fnTp->InstanceTemplate()->SetInternalFieldCount(1);
 
     SetPrototypeMethod(fnTp, "annotateRouteFromNodeIds", annotateRouteFromNodeIds);
+    SetPrototypeMethod(fnTp, "annotateRouteFromLonLats", annotateRouteFromLonLats);
+    SetPrototypeMethod(fnTp, "getAllTagsForWayId", getAllTagsForWayId);
 
     const auto fn = Nan::GetFunction(fnTp).ToLocalChecked();
 
@@ -74,26 +78,30 @@ NAN_METHOD(Annotator::annotateRouteFromNodeIds)
 {
     auto *const self = Nan::ObjectWrap::Unwrap<Annotator>(info.Holder());
 
-    // TODO(daniel-j-h): what about TypedArrays? IsArray() not superset of IsTypedArray()
-    // https://v8docs.nodesource.com/node-4.2/dc/d0a/classv8_1_1_value.html
     if (info.Length() != 1 || !info[0]->IsArray())
         return Nan::ThrowTypeError("Array of node ids expected");
 
     const auto jsNodeIds = info[0].As<v8::Array>();
 
+    // Guard against empty or one nodeId for which no wayId can be assigned
+    if (jsNodeIds->Length() < 2)
+        return info.GetReturnValue().Set(Nan::New<v8::Array>());
+
     std::vector<external_nodeid_t> externalIds(jsNodeIds->Length());
 
     for (std::size_t i{0}; i < jsNodeIds->Length(); ++i)
     {
-        const auto nodeId = Nan::Get(jsNodeIds, i).ToLocalChecked();
+        const auto nodeIdValue = Nan::Get(jsNodeIds, i).ToLocalChecked();
 
-        if (!nodeId->IsNumber())
+        if (!nodeIdValue->IsNumber())
             return Nan::ThrowTypeError("Array of number type expected");
 
-        externalIds[i] = Nan::To<std::int64_t>(nodeId).FromJust();
-        // TODO(daniel-j-h): Why is there no conversion to uint64_t?
-        // https://github.com/nodejs/nan/blob/master/doc/converters.md#nanto
-        // externalIds[i] = Nan::To<external_nodeid_t>(nodeId).FromJust();
+        // Javascript has no UInt64 type, we have to go through floating point types.
+        // Only safe until Number.MAX_SAFE_INTEGER, which is 2^53-1, guard with checked cast.
+        const auto nodeIdDouble = Nan::To<double>(nodeIdValue).FromJust();
+        const auto nodeId = boost::numeric_cast<external_nodeid_t>(nodeIdDouble);
+
+        externalIds[i] = nodeId;
     }
 
     // Note: memory for externalIds could be reclaimed after the translation to internalIds
@@ -113,6 +121,91 @@ NAN_METHOD(Annotator::annotateRouteFromNodeIds)
     }
 
     info.GetReturnValue().Set(annotated);
+}
+
+NAN_METHOD(Annotator::annotateRouteFromLonLats)
+{
+    auto *const self = Nan::ObjectWrap::Unwrap<Annotator>(info.Holder());
+
+    if (info.Length() != 1 || !info[0]->IsArray())
+        return Nan::ThrowTypeError("Array of [lon, lat] arrays expected");
+
+    auto jsLonLats = info[0].As<v8::Array>();
+
+    // Guard against empty or one coordinate for which no wayId can be assigned
+    if (jsLonLats->Length() < 2)
+        return info.GetReturnValue().Set(Nan::New<v8::Array>());
+
+    std::vector<point_t> coordinates(jsLonLats->Length());
+
+    for (std::size_t i{0}; i < jsLonLats->Length(); ++i)
+    {
+        auto lonLatValue = Nan::Get(jsLonLats, i).ToLocalChecked();
+
+        if (!lonLatValue->IsArray())
+            return Nan::ThrowTypeError("Array of [lon, lat] expected");
+
+        auto lonLatArray = lonLatValue.As<v8::Array>();
+
+        if (lonLatArray->Length() != 2)
+            return Nan::ThrowTypeError("Array of [lon, lat] expected");
+
+        const auto lonValue = Nan::Get(lonLatArray, 0).ToLocalChecked();
+        const auto latValue = Nan::Get(lonLatArray, 1).ToLocalChecked();
+
+        const auto lon = Nan::To<double>(lonValue).FromJust();
+        const auto lat = Nan::To<double>(latValue).FromJust();
+
+        coordinates[i] = {lon, lat};
+    }
+
+    // Note: memory for externalIds could be reclaimed after the translation to internalIds
+    const auto internalIds = self->annotator.coordinates_to_internal(coordinates);
+    const auto wayIds = self->annotator.annotateRoute(internalIds);
+
+    auto annotated = Nan::New<v8::Array>(wayIds.size());
+
+    for (std::size_t i{0}; i < wayIds.size(); ++i)
+    {
+        const auto wayId = wayIds[i];
+
+        if (wayId == INVALID_WAYID)
+            (void)Nan::Set(annotated, i, Nan::Null());
+        else
+            (void)Nan::Set(annotated, i, Nan::New<v8::Number>(wayIds[i]));
+    }
+
+    info.GetReturnValue().Set(annotated);
+}
+
+NAN_METHOD(Annotator::getAllTagsForWayId)
+{
+    auto *const self = Nan::ObjectWrap::Unwrap<Annotator>(info.Holder());
+
+    if (info.Length() != 1 || !info[0]->IsNumber())
+        return Nan::ThrowTypeError("Array of [lon, lat] arrays expected");
+
+    const auto wayId = Nan::To<wayid_t>(info[0]).FromJust();
+    const auto range = self->annotator.get_tag_range(wayId);
+
+    auto tags = Nan::New<v8::Array>(range.second - range.first);
+
+    std::size_t arrayIndex{0};
+
+    for (auto i = range.first; i <= range.second; ++i)
+    {
+        const auto key = self->annotator.get_tag_key(i);
+        const auto value = self->annotator.get_tag_value(i);
+
+        auto tag = Nan::New<v8::Array>(2);
+        (void)Nan::Set(tag, 0, Nan::New<v8::String>(key).ToLocalChecked());
+        (void)Nan::Set(tag, 1, Nan::New<v8::String>(value).ToLocalChecked());
+
+        (void)Nan::Set(tags, arrayIndex, tag);
+        arrayIndex += 1;
+    }
+
+    info.GetReturnValue().Set(tags);
 }
 
 Nan::Persistent<v8::Function> &Annotator::constructor()
