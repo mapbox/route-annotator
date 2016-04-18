@@ -11,8 +11,8 @@
   "license": "ISC",
   "main": "index.js",
   "scripts": {
-    "install": "ncmake --build --config Release",
-    "test": "node test"
+    "install": "ncmake --build --config Release -DNODEJS=ON build",
+    "test": "node ./test.js"
   },
   "devDependencies": {
     "nan": "^2.2.1",

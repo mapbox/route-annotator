@@ -79,7 +79,7 @@ class Annotator final : public Nan::ObjectWrap
 
             void Execute() override
             {
-                //return SetErrorMessage("Oops");
+                // return SetErrorMessage("Oops");
                 std::this_thread::sleep_for(std::chrono::seconds{5});
                 response = 0;
             };
