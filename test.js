@@ -45,7 +45,9 @@ function nodeListHandler(annotator) {
       return res.sendStatus(400);
 
     const wayIds = annotator.annotateRouteFromNodeIds(nodes);
-    res.send(wayIds);
+    const metadata = function(wayId) { return wayId !== null ? {'wayId': wayId, 'wayTags': annotator.getAllTagsForWayId(wayId)} : null; };
+
+    res.send(wayIds.map(metadata));
   };
 }
 
@@ -64,7 +66,9 @@ function coordListHandler(annotator) {
       return res.sendStatus(400);
 
     const wayIds = annotator.annotateRouteFromLonLats(coordinates);
-    res.send(wayIds);
+    const metadata = function(wayId) { return wayId !== null ? {'wayId': wayId, 'wayTags': annotator.getAllTagsForWayId(wayId)} : null; };
+
+    res.json(wayIds.map(metadata));
   };
 }
 
