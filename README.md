@@ -15,6 +15,14 @@ Run:
 make
 ```
 
+## Building the Node.js Bindings
+
+```
+./deps.sh
+npm install
+npm test
+```
+
 ## Getting the node sequence to query with
 
 OSRM (on the feature/expose_node_ids branch) is able to return not just coordinates along a route, but OSM node ids as well.

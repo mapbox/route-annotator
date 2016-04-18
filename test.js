@@ -1,19 +1,6 @@
 const pkg = require('./index');
 
-const annotator = new pkg.Annotator(42);
+const annotator = new pkg.Annotator('build/monaco.osm.pbf');
 
-
-console.log('Begin');
-
-// Sync. member function call, blocks
-//console.log(annotator.getValue());
-
-// Async. member function call, does not block, pass callback
-annotator.getValueAsync(function (err, result) {
-  if (err)
-    console.log(err);
-  else
-    console.log('Success: ' + result);
-});
-
-console.log('End');
+const fst = annotator.annotateRouteFromNodeIds([1, 2, 3]);
+console.log(fst);

@@ -1,5 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.1 FATAL_ERROR)
 
+# Note: project name is used for Node.JS bindings (shared lib); must not contain e.g. "-"
 PROJECT(route_annotator VERSION 0.0.1 LANGUAGES C CXX)
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -36,20 +37,35 @@ SET(Casablanca_LIBRARIES_DIRS "third_party/casablanca/Release/build/Binaries")
 SET(Casablanca_LIBRARIES cpprest ssl crypto)
 LINK_DIRECTORIES(${Casablanca_LIBRARIES_DIRS})
 
-SET(libosmium_INCLUDE_DIRS "third_party/libosmium/include")
-
-ADD_EXECUTABLE(route-annotatord src/server.cpp src/annotator.cpp src/database.cpp src/extractor.cpp)
-TARGET_LINK_LIBRARIES(route-annotatord ${Casablanca_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Casablanca_LIBRARIES} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${EXPAT_LIBRARIES} ${BZIP2_LIBRARIES} ${THREADS_LIBRARIES})
-TARGET_INCLUDE_DIRECTORIES(route-annotatord SYSTEM PUBLIC ${Casablanca_INCLUDE_DIRS} ${libosmium_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} ${EXPAT_INCLUDE_DIR} ${BZIP2_INCLUDE_DIR})
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libosmium/cmake")
+SET(OSMIUM_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libosmium/include")
+FIND_PACKAGE(Osmium REQUIRED COMPONENTS io)
 
 
+# Build libannotator.{so,a} for both the annotator daemon as well as our (optional) Node bindings
+SET(LibAnnotatorSources	src/annotator.cpp src/database.cpp src/extractor.cpp)
+ADD_LIBRARY(annotator ${LibAnnotatorSources})
+TARGET_LINK_LIBRARIES(annotator ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OSMIUM_LIBRARIES})
+TARGET_INCLUDE_DIRECTORIES(annotator SYSTEM PUBLIC ${Boost_INCLUDE_DIRS} ${OSMIUM_INCLUDE_DIRS})
+SET_PROPERTY(TARGET annotator PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+# Build annotator daemon httpd for wrapping and linking in libannotator.{so,a}
+ADD_EXECUTABLE(route-annotatord src/server.cpp)
+TARGET_LINK_LIBRARIES(route-annotatord annotator ${Casablanca_LIBRARIES} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${EXPAT_LIBRARIES} ${BZIP2_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+TARGET_INCLUDE_DIRECTORIES(route-annotatord SYSTEM PUBLIC ${Casablanca_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+
+# Build Node.JS bindings, linking in libannotator.{so,a}
+# Note: instead of invoking this directly use "npm install"
 OPTION(NODEJS "Build Node.js Bindings" OFF)
-
 IF(NODEJS)
   LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/node_modules/node-cmake)
   FIND_PACKAGE(NodeJS)
 
-  ADD_NODEJS_MODULE(${PROJECT_NAME} nodejs_bindings.cpp)
+  ADD_NODEJS_MODULE(${PROJECT_NAME} src/nodejs_bindings.cpp)
+
+  TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} SYSTEM PUBLIC "src")
+  TARGET_LINK_LIBRARIES(${PROJECT_NAME} annotator)
+
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-parameter")
 
   MESSAGE(STATUS "Node.js include path: ${NodeJS_INCLUDE_PATHS}")

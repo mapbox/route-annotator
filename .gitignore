@@ -3,3 +3,5 @@ third_party
 
 node_modules
 npm-debug.log
+
+nodes.cache
