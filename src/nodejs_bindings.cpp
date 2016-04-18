@@ -49,6 +49,8 @@ NAN_METHOD(Annotator::New)
             Database database;
             Extractor extractor{extract, database};
 
+            // TODO(daniel-j-h): this blocks Node.js while parsing in the constructor call.
+            // Provide a member function instead, taking a callback.
             auto *const self = new Annotator(std::move(database));
 
             self->Wrap(info.This());

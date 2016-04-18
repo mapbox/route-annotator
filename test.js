@@ -1,15 +1,72 @@
-const pkg = require('./index');
-const assert = require('assert');
+'use strict';
 
-const annotator = new pkg.Annotator('build/monaco.osm.pbf');
+const bindings = require('./index');
+const express = require('express');
 
-const fst = annotator.annotateRouteFromNodeIds([1, 2, 3]);
-assert.equal(fst.length, 2, 'There are n-1 ways between n nodes')
-console.log(fst);
 
-const snd = annotator.annotateRouteFromLonLats([[1, 2], [3, 4]]);
-assert.equal(snd.length, 1, 'There are n-1 ways between n coordinates')
-console.log(snd);
+function main() {
+  const argv = process.argv.slice(1);
+  const argc = argv.length;
 
-const thd = annotator.getAllTagsForWayId(1);
-console.log(thd)
+  if (argc < 2)
+    return console.error(`Usage: ${__filename} FILE [PORT]`);
+
+  const osmFile = argv[1];
+  const port = argc == 3 ? argv[2] : 5000;
+
+  const app = express();
+
+  app.use((req, res, next) => {
+    console.log(`${req.method}  ${req.url}  ${req.headers['user-agent']}`);
+    next();
+  });
+
+
+  const annotator = new bindings.Annotator(osmFile);
+
+  app.get('/nodelist/:nodelist', nodeListHandler(annotator));
+  app.get('/coordlist/:coordlist', coordListHandler(annotator));
+
+  app.listen(port, () => {
+    console.log(`Listening on localhost:${port}`);
+  });
+}
+
+
+function nodeListHandler(annotator) {
+  return (req, res) => {
+    const nodes = req.params.nodelist
+                    .split(',')
+                    .map(x => parseInt(x, 10));
+
+    const invalid = (x) => !isFinite(x) || x === null;
+
+    if (nodes.some(invalid))
+      return res.sendStatus(400);
+
+    const wayIds = annotator.annotateRouteFromNodeIds(nodes);
+    res.send(wayIds);
+  };
+}
+
+
+function coordListHandler(annotator) {
+  return (req, res) => {
+    const coordinates = req.params.coordlist
+                          .split(';')
+                          .map(lonLat => lonLat
+                                           .split(',')
+                                           .map(x => parseFloat(x)));
+
+    const invalid = (x) => !isFinite(x) || x === null;
+
+    if (coordinates.some(lonLat => lonLat.some(invalid)))
+      return res.sendStatus(400);
+
+    const wayIds = annotator.annotateRouteFromLonLats(coordinates);
+    res.send(wayIds);
+  };
+}
+
+
+if (require.main === module) { main(); }

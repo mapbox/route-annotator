@@ -17,10 +17,10 @@ class Annotator final : public Nan::ObjectWrap
     /* Constructor call for Javascript object, as in "new Annotator(..)" or "Annotator(..)" */
     static NAN_METHOD(New);
 
-    /* Member function for Javascript object: [nodeId, nodeId] -> [dummy, dummy] */
+    /* Member function for Javascript object: [nodeId, nodeId, ..] -> [wayId, wayId, ..] */
     static NAN_METHOD(annotateRouteFromNodeIds);
 
-    /* Member function for Javascript object: [[lon, lat], [lon, lat]] -> [dummy, dummy] */
+    /* Member function for Javascript object: [[lon, lat], [lon, lat]] -> [wayId, wayId, ..] */
     static NAN_METHOD(annotateRouteFromLonLats);
 
     /* Member function for Javascript object: wayId -> [[key, value], [key, value]] */
