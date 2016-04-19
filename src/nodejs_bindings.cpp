@@ -199,8 +199,8 @@ NAN_METHOD(Annotator::annotateRouteFromLonLats)
     if (!self->database || !self->annotator)
         return Nan::ThrowError("No OSM data loaded");
 
-    if (info.Length() != 1 || !info[0]->IsArray())
-        return Nan::ThrowTypeError("Array of [lon, lat] arrays expected");
+    if (info.Length() != 2 || !info[0]->IsArray() || !info[1]->IsFunction())
+        return Nan::ThrowTypeError("Array of [lon, lat] arrays and callback expected");
 
     auto jsLonLats = info[0].As<v8::Array>();
 
@@ -225,29 +225,59 @@ NAN_METHOD(Annotator::annotateRouteFromLonLats)
         const auto lonValue = Nan::Get(lonLatArray, 0).ToLocalChecked();
         const auto latValue = Nan::Get(lonLatArray, 1).ToLocalChecked();
 
+        if (!lonValue->IsNumber() || !latValue->IsNumber())
+            return Nan::ThrowTypeError("Array of two numbers [lon, lat] expected");
+
         const auto lon = Nan::To<double>(lonValue).FromJust();
         const auto lat = Nan::To<double>(latValue).FromJust();
 
         coordinates[i] = {lon, lat};
     }
 
-    // Note: memory for externalIds could be reclaimed after the translation to internalIds
-    const auto internalIds = self->annotator->coordinates_to_internal(coordinates);
-    const auto wayIds = self->annotator->annotateRoute(internalIds);
-
-    auto annotated = Nan::New<v8::Array>(wayIds.size());
-
-    for (std::size_t i{0}; i < wayIds.size(); ++i)
+    struct WayIdsFromLonLatsLoader final : Nan::AsyncWorker
     {
-        const auto wayId = wayIds[i];
+        explicit WayIdsFromLonLatsLoader(Annotator &self_,
+                                         Nan::Callback *callback,
+                                         std::vector<point_t> coordinates_)
+            : Nan::AsyncWorker(callback), self{self_}, coordinates{std::move(coordinates_)}
+        {
+        }
 
-        if (wayId == INVALID_WAYID)
-            (void)Nan::Set(annotated, i, Nan::Null());
-        else
-            (void)Nan::Set(annotated, i, Nan::New<v8::Number>(wayIds[i]));
-    }
+        void Execute() override
+        {
+            const auto internalIds = self.annotator->coordinates_to_internal(coordinates);
+            wayIds = self.annotator->annotateRoute(internalIds);
+        }
 
-    info.GetReturnValue().Set(annotated);
+        void HandleOKCallback() override
+        {
+            Nan::HandleScope scope;
+
+            auto annotated = Nan::New<v8::Array>(wayIds.size());
+
+            for (std::size_t i{0}; i < wayIds.size(); ++i)
+            {
+                const auto wayId = wayIds[i];
+
+                if (wayId == INVALID_WAYID)
+                    (void)Nan::Set(annotated, i, Nan::Null());
+                else
+                    (void)Nan::Set(annotated, i, Nan::New<v8::Number>(wayIds[i]));
+            }
+
+            const constexpr auto argc = 2u;
+            v8::Local<v8::Value> argv[argc] = {Nan::Null(), annotated};
+
+            callback->Call(argc, argv);
+        }
+
+        Annotator &self;
+        std::vector<point_t> coordinates;
+        annotated_route_t wayIds;
+    };
+
+    auto *callback = new Nan::Callback{info[1].As<v8::Function>()};
+    Nan::AsyncQueueWorker(new WayIdsFromLonLatsLoader{*self, callback, std::move(coordinates)});
 }
 
 NAN_METHOD(Annotator::getAllTagsForWayId)

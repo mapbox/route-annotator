@@ -72,10 +72,13 @@ function coordListHandler(annotator) {
     if (coordinates.some(lonLat => lonLat.some(invalid)))
       return res.sendStatus(400);
 
-    const wayIds = annotator.annotateRouteFromLonLats(coordinates);
-    const metadata = function(wayId) { return wayId !== null ? {'wayId': wayId, 'wayTags': annotator.getAllTagsForWayId(wayId)} : null; };
+    annotator.annotateRouteFromLonLats(coordinates, (err, wayIds) => {
+      if (err)
+        return res.sendStatus(400);
 
-    res.json(wayIds.map(metadata));
+      const metadata = function(wayId) { return wayId !== null ? {'wayId': wayId, 'wayTags': annotator.getAllTagsForWayId(wayId)} : null; };
+      res.send(wayIds.map(metadata));
+    });
   };
 }
 
