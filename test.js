@@ -52,8 +52,9 @@ function nodeListHandler(annotator) {
       if (err)
         return res.sendStatus(400);
 
-      const metadata = function(wayId) { return wayId !== null ? {'wayId': wayId, 'wayTags': annotator.getAllTagsForWayId(wayId)} : null; };
-      res.send(wayIds.map(metadata));
+      // TODO(daniel-j-h): standardize format for {wayId, tags}, accumulate and send back
+      // wayIds.map(annotator.getAllTagsForWayId(wayId, (err, tags) => {}));
+      res.json({'message': 'Danpat needs to standardize a format'});
     });
   };
 }
@@ -76,8 +77,9 @@ function coordListHandler(annotator) {
       if (err)
         return res.sendStatus(400);
 
-      const metadata = function(wayId) { return wayId !== null ? {'wayId': wayId, 'wayTags': annotator.getAllTagsForWayId(wayId)} : null; };
-      res.send(wayIds.map(metadata));
+      // TODO(daniel-j-h): standardize format for {wayId, tags}, accumulate and send back
+      // wayIds.map(annotator.getAllTagsForWayId(wayId, (err, tags) => {}));
+      res.json({'message': 'Danpat needs to standardize a format'});
     });
   };
 }

@@ -287,30 +287,54 @@ NAN_METHOD(Annotator::getAllTagsForWayId)
     if (!self->database || !self->annotator)
         return Nan::ThrowError("No OSM data loaded");
 
-    if (info.Length() != 1 || !info[0]->IsNumber())
-        return Nan::ThrowTypeError("Array of [lon, lat] arrays expected");
+    if (info.Length() != 2 || !info[0]->IsNumber() || !info[1]->IsFunction())
+        return Nan::ThrowTypeError("Array of [lon, lat] arrays and callback expected");
 
     const auto wayId = Nan::To<wayid_t>(info[0]).FromJust();
-    const auto range = self->annotator->get_tag_range(wayId);
 
-    auto tags = Nan::New<v8::Array>(range.second - range.first);
-
-    std::size_t arrayIndex{0};
-
-    for (auto i = range.first; i <= range.second; ++i)
+    struct TagsForWayIdLoader final : Nan::AsyncWorker
     {
-        const auto key = self->annotator->get_tag_key(i);
-        const auto value = self->annotator->get_tag_value(i);
+        explicit TagsForWayIdLoader(Annotator &self_, Nan::Callback *callback, wayid_t wayId_)
+            : Nan::AsyncWorker(callback), self{self_}, wayId{std::move(wayId_)}
+        {
+        }
 
-        auto tag = Nan::New<v8::Array>(2);
-        (void)Nan::Set(tag, 0, Nan::New<v8::String>(key).ToLocalChecked());
-        (void)Nan::Set(tag, 1, Nan::New<v8::String>(value).ToLocalChecked());
+        void Execute() override { range = self.annotator->get_tag_range(wayId); }
 
-        (void)Nan::Set(tags, arrayIndex, tag);
-        arrayIndex += 1;
-    }
+        void HandleOKCallback() override
+        {
+            Nan::HandleScope scope;
 
-    info.GetReturnValue().Set(tags);
+            auto tags = Nan::New<v8::Array>(range.second - range.first);
+
+            std::size_t arrayIndex{0};
+
+            for (auto i = range.first; i <= range.second; ++i)
+            {
+                const auto key = self.annotator->get_tag_key(i);
+                const auto value = self.annotator->get_tag_value(i);
+
+                auto tag = Nan::New<v8::Array>(2);
+                (void)Nan::Set(tag, 0, Nan::New<v8::String>(key).ToLocalChecked());
+                (void)Nan::Set(tag, 1, Nan::New<v8::String>(value).ToLocalChecked());
+
+                (void)Nan::Set(tags, arrayIndex, tag);
+                arrayIndex += 1;
+            }
+
+            const constexpr auto argc = 2u;
+            v8::Local<v8::Value> argv[argc] = {Nan::Null(), tags};
+
+            callback->Call(argc, argv);
+        }
+
+        Annotator &self;
+        wayid_t wayId;
+        tagrange_t range;
+    };
+
+    auto *callback = new Nan::Callback{info[1].As<v8::Function>()};
+    Nan::AsyncQueueWorker(new TagsForWayIdLoader{*self, callback, std::move(wayId)});
 }
 
 Nan::Persistent<v8::Function> &Annotator::constructor()
