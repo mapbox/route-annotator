@@ -48,10 +48,13 @@ function nodeListHandler(annotator) {
     if (nodes.some(invalid))
       return res.sendStatus(400);
 
-    const wayIds = annotator.annotateRouteFromNodeIds(nodes);
-    const metadata = function(wayId) { return wayId !== null ? {'wayId': wayId, 'wayTags': annotator.getAllTagsForWayId(wayId)} : null; };
+    annotator.annotateRouteFromNodeIds(nodes, (err, wayIds) => {
+      if (err)
+        return res.sendStatus(400);
 
-    res.send(wayIds.map(metadata));
+      const metadata = function(wayId) { return wayId !== null ? {'wayId': wayId, 'wayTags': annotator.getAllTagsForWayId(wayId)} : null; };
+      res.send(wayIds.map(metadata));
+    });
   };
 }
 

@@ -113,8 +113,8 @@ NAN_METHOD(Annotator::annotateRouteFromNodeIds)
     if (!self->database || !self->annotator)
         return Nan::ThrowError("No OSM data loaded");
 
-    if (info.Length() != 1 || !info[0]->IsArray())
-        return Nan::ThrowTypeError("Array of node ids expected");
+    if (info.Length() != 2 || !info[0]->IsArray() || !info[1]->IsFunction())
+        return Nan::ThrowTypeError("Array of node ids and callback expected");
 
     const auto jsNodeIds = info[0].As<v8::Array>();
 
@@ -134,28 +134,62 @@ NAN_METHOD(Annotator::annotateRouteFromNodeIds)
         // Javascript has no UInt64 type, we have to go through floating point types.
         // Only safe until Number.MAX_SAFE_INTEGER, which is 2^53-1, guard with checked cast.
         const auto nodeIdDouble = Nan::To<double>(nodeIdValue).FromJust();
-        const auto nodeId = boost::numeric_cast<external_nodeid_t>(nodeIdDouble);
 
-        externalIds[i] = nodeId;
+        try
+        {
+            const auto nodeId = boost::numeric_cast<external_nodeid_t>(nodeIdDouble);
+            externalIds[i] = nodeId;
+        }
+        catch (const boost::numeric::bad_numeric_cast &e)
+        {
+            return Nan::ThrowError(e.what());
+        };
     }
 
-    // Note: memory for externalIds could be reclaimed after the translation to internalIds
-    const auto internalIds = self->annotator->external_to_internal(externalIds);
-    const auto wayIds = self->annotator->annotateRoute(internalIds);
-
-    const auto annotated = Nan::New<v8::Array>(wayIds.size());
-
-    for (std::size_t i{0}; i < wayIds.size(); ++i)
+    struct WayIdsFromNodeIdsLoader final : Nan::AsyncWorker
     {
-        const auto wayId = wayIds[i];
+        explicit WayIdsFromNodeIdsLoader(Annotator &self_,
+                                         Nan::Callback *callback,
+                                         std::vector<external_nodeid_t> externalIds_)
+            : Nan::AsyncWorker(callback), self{self_}, externalIds{std::move(externalIds_)}
+        {
+        }
 
-        if (wayId == INVALID_WAYID)
-            (void)Nan::Set(annotated, i, Nan::Null());
-        else
-            (void)Nan::Set(annotated, i, Nan::New<v8::Number>(wayIds[i]));
-    }
+        void Execute() override
+        {
+            const auto internalIds = self.annotator->external_to_internal(externalIds);
+            wayIds = self.annotator->annotateRoute(internalIds);
+        }
 
-    info.GetReturnValue().Set(annotated);
+        void HandleOKCallback() override
+        {
+            Nan::HandleScope scope;
+
+            auto annotated = Nan::New<v8::Array>(wayIds.size());
+
+            for (std::size_t i{0}; i < wayIds.size(); ++i)
+            {
+                const auto wayId = wayIds[i];
+
+                if (wayId == INVALID_WAYID)
+                    (void)Nan::Set(annotated, i, Nan::Null());
+                else
+                    (void)Nan::Set(annotated, i, Nan::New<v8::Number>(wayIds[i]));
+            }
+
+            const constexpr auto argc = 2u;
+            v8::Local<v8::Value> argv[argc] = {Nan::Null(), annotated};
+
+            callback->Call(argc, argv);
+        }
+
+        Annotator &self;
+        std::vector<external_nodeid_t> externalIds;
+        annotated_route_t wayIds;
+    };
+
+    auto *callback = new Nan::Callback{info[1].As<v8::Function>()};
+    Nan::AsyncQueueWorker(new WayIdsFromNodeIdsLoader{*self, callback, std::move(externalIds)});
 }
 
 NAN_METHOD(Annotator::annotateRouteFromLonLats)
