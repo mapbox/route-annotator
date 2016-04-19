@@ -54,33 +54,56 @@ NAN_METHOD(Annotator::loadOSMExtract)
     // In case we already loaded a dataset, this function will transactionally swap in a new one
     auto *const self = Nan::ObjectWrap::Unwrap<Annotator>(info.Holder());
 
-    if (info.Length() != 1 || !info[0]->IsString())
-        return Nan::ThrowTypeError("String to OSMFile to load from exptected");
+    if (info.Length() != 2 || !info[0]->IsString() || !info[1]->IsFunction())
+        return Nan::ThrowTypeError("String and callback expected");
 
     const Nan::Utf8String utf8String(info[0]);
 
     if (!(*utf8String))
         return Nan::ThrowError("Unable to convert to Utf8String");
 
-    const std::string path{*utf8String, *utf8String + utf8String.length()};
+    std::string path{*utf8String, *utf8String + utf8String.length()};
 
-    try
+    struct OSMLoader final : Nan::AsyncWorker
     {
-        // Note: provide strong exception safety guarantee (rollback)
-        auto database = std::make_unique<Database>();
+        explicit OSMLoader(Annotator &self_, Nan::Callback *callback, std::string path_)
+            : Nan::AsyncWorker(callback), self{self_}, path{std::move(path_)}
         {
-            Extractor extractor{path, *database};
         }
-        auto annotator = std::make_unique<RouteAnnotator>(*database);
 
-        // Transactionally swap (noexcept)
-        swap(self->database, database);
-        swap(self->annotator, annotator);
-    }
-    catch (const std::exception &e)
-    {
-        return Nan::ThrowError(e.what());
-    }
+        void Execute() override
+        {
+            try
+            {
+                // Note: provide strong exception safety guarantee (rollback)
+                auto database = std::make_unique<Database>();
+                Extractor extractor{path, *database};
+                auto annotator = std::make_unique<RouteAnnotator>(*database);
+
+                // Transactionally swap (noexcept)
+                swap(self.database, database);
+                swap(self.annotator, annotator);
+            }
+            catch (const std::exception &e)
+            {
+                return SetErrorMessage(e.what());
+            }
+        }
+
+        void HandleOKCallback() override
+        {
+            Nan::HandleScope scope;
+            const constexpr auto argc = 1u;
+            v8::Local<v8::Value> argv[argc] = {Nan::Null()};
+            callback->Call(argc, argv);
+        }
+
+        Annotator &self;
+        std::string path;
+    };
+
+    auto *callback = new Nan::Callback{info[1].As<v8::Function>()};
+    Nan::AsyncQueueWorker(new OSMLoader{*self, callback, std::move(path)});
 }
 
 NAN_METHOD(Annotator::annotateRouteFromNodeIds)

@@ -21,16 +21,18 @@ function main() {
     next();
   });
 
-
   const annotator = new bindings.Annotator();
-
-  annotator.loadOSMExtract(osmFile);
 
   app.get('/nodelist/:nodelist', nodeListHandler(annotator));
   app.get('/coordlist/:coordlist', coordListHandler(annotator));
 
-  app.listen(port, () => {
-    console.log(`Listening on localhost:${port}`);
+  annotator.loadOSMExtract(osmFile, (err) => {
+    if (err)
+      return console.error(err);
+
+    app.listen(port, () => {
+      console.log(`Listening on localhost:${port}`);
+    });
   });
 }
 
