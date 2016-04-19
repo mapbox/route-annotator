@@ -22,7 +22,9 @@ function main() {
   });
 
 
-  const annotator = new bindings.Annotator(osmFile);
+  const annotator = new bindings.Annotator();
+
+  annotator.loadOSMExtract(osmFile);
 
   app.get('/nodelist/:nodelist', nodeListHandler(annotator));
   app.get('/coordlist/:coordlist', coordListHandler(annotator));

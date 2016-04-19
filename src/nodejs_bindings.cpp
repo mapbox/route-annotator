@@ -1,8 +1,8 @@
 #include <cstdint>
 
+#include <memory>
 #include <stdexcept>
 #include <string>
-#include <utility>
 
 #include "extractor.hpp"
 #include "types.hpp"
@@ -19,6 +19,7 @@ NAN_MODULE_INIT(Annotator::Init)
     fnTp->SetClassName(whoami);
     fnTp->InstanceTemplate()->SetInternalFieldCount(1);
 
+    SetPrototypeMethod(fnTp, "loadOSMExtract", loadOSMExtract);
     SetPrototypeMethod(fnTp, "annotateRouteFromNodeIds", annotateRouteFromNodeIds);
     SetPrototypeMethod(fnTp, "annotateRouteFromLonLats", annotateRouteFromLonLats);
     SetPrototypeMethod(fnTp, "getAllTagsForWayId", getAllTagsForWayId);
@@ -32,53 +33,62 @@ NAN_MODULE_INIT(Annotator::Init)
 
 NAN_METHOD(Annotator::New)
 {
-    if (info.Length() != 1 || !info[0]->IsString())
-        return Nan::ThrowTypeError("String to extract exptected");
+    if (info.Length() != 0)
+        return Nan::ThrowTypeError("No types expected");
 
     if (info.IsConstructCall())
     {
-        const Nan::Utf8String utf8String(info[0]);
-
-        if (!(*utf8String))
-            return Nan::ThrowError("Unable to convert to Utf8String");
-
-        const std::string extract{*utf8String, *utf8String + utf8String.length()};
-
-        try
-        {
-            Database database;
-            Extractor extractor{extract, database};
-
-            // TODO(daniel-j-h): this blocks Node.js while parsing in the constructor call.
-            // Provide a member function instead, taking a callback.
-            auto *const self = new Annotator(std::move(database));
-
-            self->Wrap(info.This());
-        }
-        catch (const std::exception &e)
-        {
-            return Nan::ThrowError(e.what());
-        }
-
+        auto *const self = new Annotator;
+        self->Wrap(info.This());
         info.GetReturnValue().Set(info.This());
     }
     else
     {
-        const constexpr auto argc = 1u;
-
-        v8::Local<v8::Value> argv[argc] = {
-            info[0],
-        };
-
         auto init = Nan::New(constructor());
+        info.GetReturnValue().Set(init->NewInstance());
+    }
+}
 
-        info.GetReturnValue().Set(init->NewInstance(argc, argv));
+NAN_METHOD(Annotator::loadOSMExtract)
+{
+    // In case we already loaded a dataset, this function will transactionally swap in a new one
+    auto *const self = Nan::ObjectWrap::Unwrap<Annotator>(info.Holder());
+
+    if (info.Length() != 1 || !info[0]->IsString())
+        return Nan::ThrowTypeError("String to OSMFile to load from exptected");
+
+    const Nan::Utf8String utf8String(info[0]);
+
+    if (!(*utf8String))
+        return Nan::ThrowError("Unable to convert to Utf8String");
+
+    const std::string path{*utf8String, *utf8String + utf8String.length()};
+
+    try
+    {
+        // Note: provide strong exception safety guarantee (rollback)
+        auto database = std::make_unique<Database>();
+        {
+            Extractor extractor{path, *database};
+        }
+        auto annotator = std::make_unique<RouteAnnotator>(*database);
+
+        // Transactionally swap (noexcept)
+        swap(self->database, database);
+        swap(self->annotator, annotator);
+    }
+    catch (const std::exception &e)
+    {
+        return Nan::ThrowError(e.what());
     }
 }
 
 NAN_METHOD(Annotator::annotateRouteFromNodeIds)
 {
     auto *const self = Nan::ObjectWrap::Unwrap<Annotator>(info.Holder());
+
+    if (!self->database || !self->annotator)
+        return Nan::ThrowError("No OSM data loaded");
 
     if (info.Length() != 1 || !info[0]->IsArray())
         return Nan::ThrowTypeError("Array of node ids expected");
@@ -107,8 +117,8 @@ NAN_METHOD(Annotator::annotateRouteFromNodeIds)
     }
 
     // Note: memory for externalIds could be reclaimed after the translation to internalIds
-    const auto internalIds = self->annotator.external_to_internal(externalIds);
-    const auto wayIds = self->annotator.annotateRoute(internalIds);
+    const auto internalIds = self->annotator->external_to_internal(externalIds);
+    const auto wayIds = self->annotator->annotateRoute(internalIds);
 
     const auto annotated = Nan::New<v8::Array>(wayIds.size());
 
@@ -128,6 +138,9 @@ NAN_METHOD(Annotator::annotateRouteFromNodeIds)
 NAN_METHOD(Annotator::annotateRouteFromLonLats)
 {
     auto *const self = Nan::ObjectWrap::Unwrap<Annotator>(info.Holder());
+
+    if (!self->database || !self->annotator)
+        return Nan::ThrowError("No OSM data loaded");
 
     if (info.Length() != 1 || !info[0]->IsArray())
         return Nan::ThrowTypeError("Array of [lon, lat] arrays expected");
@@ -162,8 +175,8 @@ NAN_METHOD(Annotator::annotateRouteFromLonLats)
     }
 
     // Note: memory for externalIds could be reclaimed after the translation to internalIds
-    const auto internalIds = self->annotator.coordinates_to_internal(coordinates);
-    const auto wayIds = self->annotator.annotateRoute(internalIds);
+    const auto internalIds = self->annotator->coordinates_to_internal(coordinates);
+    const auto wayIds = self->annotator->annotateRoute(internalIds);
 
     auto annotated = Nan::New<v8::Array>(wayIds.size());
 
@@ -184,11 +197,14 @@ NAN_METHOD(Annotator::getAllTagsForWayId)
 {
     auto *const self = Nan::ObjectWrap::Unwrap<Annotator>(info.Holder());
 
+    if (!self->database || !self->annotator)
+        return Nan::ThrowError("No OSM data loaded");
+
     if (info.Length() != 1 || !info[0]->IsNumber())
         return Nan::ThrowTypeError("Array of [lon, lat] arrays expected");
 
     const auto wayId = Nan::To<wayid_t>(info[0]).FromJust();
-    const auto range = self->annotator.get_tag_range(wayId);
+    const auto range = self->annotator->get_tag_range(wayId);
 
     auto tags = Nan::New<v8::Array>(range.second - range.first);
 
@@ -196,8 +212,8 @@ NAN_METHOD(Annotator::getAllTagsForWayId)
 
     for (auto i = range.first; i <= range.second; ++i)
     {
-        const auto key = self->annotator.get_tag_key(i);
-        const auto value = self->annotator.get_tag_value(i);
+        const auto key = self->annotator->get_tag_key(i);
+        const auto value = self->annotator->get_tag_value(i);
 
         auto tag = Nan::New<v8::Array>(2);
         (void)Nan::Set(tag, 0, Nan::New<v8::String>(key).ToLocalChecked());

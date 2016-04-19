@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <utility>
 
 #include <nan.h>
@@ -17,6 +18,9 @@ class Annotator final : public Nan::ObjectWrap
     /* Constructor call for Javascript object, as in "new Annotator(..)" or "Annotator(..)" */
     static NAN_METHOD(New);
 
+    /* Member function for Javascript object to parse and load the OSM extract */
+    static NAN_METHOD(loadOSMExtract);
+
     /* Member function for Javascript object: [nodeId, nodeId, ..] -> [wayId, wayId, ..] */
     static NAN_METHOD(annotateRouteFromNodeIds);
 
@@ -29,11 +33,9 @@ class Annotator final : public Nan::ObjectWrap
     /* Thread-safe singleton constructor */
     static Nan::Persistent<v8::Function> &constructor();
 
-    /* Wrapping Annotator */
-    explicit Annotator(Database database_) : database{std::move(database_)}, annotator{database} {}
-
-    Database database;
-    RouteAnnotator annotator;
+    /* Wrapping Annotator; both database and annotator do not provide default ctor: wrap in ptr */
+    std::unique_ptr<Database> database;
+    std::unique_ptr<RouteAnnotator> annotator;
 };
 
 NODE_MODULE(route_annotator, Annotator::Init)

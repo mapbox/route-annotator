@@ -65,6 +65,8 @@ IF(NODEJS)
 
   TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} SYSTEM PUBLIC "src" ${Boost_INCLUDE_DIRS})
   TARGET_LINK_LIBRARIES(${PROJECT_NAME} annotator)
+  # Note: although we set the global property, we need this for CMake to specify -std=c++14
+  SET_PROPERTY(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
 
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-parameter")
 
