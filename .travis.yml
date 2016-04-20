@@ -3,62 +3,22 @@ language: generic
 
 # sudo:required is needed for trusty images
 sudo: required
-dist: trusty
+
+services:
+  - docker
+
+install:
+  - docker build -t mapbox/route-annotator:1.0 docker/
 
 notifications:
   email: true
-
-branches:
-  only:
-    - master
-
-matrix:
-  fast_finish: true
-
-  include:
-
-    # Debug Builds
-    - os: linux
-      compiler: gcc
-      addons: &gcc5
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5', 'libexpat-dev', 'libssl-dev', 'libbz2-dev', 'pip']
-      env: CCOMPILER='gcc-5' CXXCOMPILER='g++-5' BUILD_TYPE='Release'
-
-    #- os: osx
-      #osx_image: xcode7.3
-      #compiler: clang
-      #env: CCOMPILER='clang' CXXCOMPILER='clang++' BUILD_TYPE='Release'
-
-install:
-  - DEPS_DIR="${TRAVIS_BUILD_DIR}/deps"
-  - mkdir -p ${DEPS_DIR} && cd ${DEPS_DIR}
-  - |
-    if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
-        brew install cmake boost
-    elif [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
-      CMAKE_URL="http://www.cmake.org/files/v3.5/cmake-3.5.1-Linux-x86_64.tar.gz"
-      mkdir cmake && travis_retry wget --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C cmake
-      export PATH=${DEPS_DIR}/cmake/bin:${PATH}
-    fi
-  - |
-    git clone --depth 1 --branch v0.31.0 https://github.com/creationix/nvm.git
-    . nvm/nvm.sh
-    nvm install v4
-    nvm use v4
-    node --version
-    npm --version
-    which node
 
 before_script:
   - cd ${TRAVIS_BUILD_DIR}
   - export CC=${CCOMPILER} CXX=${CXXCOMPILER}
 
 script:
-#  - ./bootstrap.sh
-#  - make test
-  - |
-    pushd bindings
-    npm install
-    npm test
+  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator mapbox/route-annotator:1.0 /bin/bash -c "source /opt/nvm/nvm.sh && npm install"
+  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator --publish=5000:5000 mapbox/route-annotator:1.0 /bin/bash -c "source /opt/nvm/nvm.sh && npm test &"
+  - curl "http://localhost:5000/coordlist/1,1;2,2"
+  
