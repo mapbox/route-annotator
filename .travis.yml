@@ -18,8 +18,10 @@ before_script:
   - echo ${TRAVIS_BUILD_DIR}
   - pwd
   - export CC=${CCOMPILER} CXX=${CXXCOMPILER}
+  - ls -la
 
 script:
+  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator mapbox/route-annotator:1.0 /bin/bash -c "ls -la ; ls -la ~"
   - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator mapbox/route-annotator:1.0 /bin/bash -c "source /opt/nvm/nvm.sh && npm install"
   - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator --publish=5000:5000 mapbox/route-annotator:1.0 /bin/bash -c "source /opt/nvm/nvm.sh && npm test &"
   - curl "http://localhost:5000/coordlist/1,1;2,2"
