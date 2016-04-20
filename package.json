@@ -12,7 +12,7 @@
   "main": "index.js",
   "scripts": {
     "install": "ncmake --build --config Release -DNODEJS=ON build",
-    "test": "node ./test.js"
+    "test": "(if [ ! -f monaco-latest.osm.pbf ] ; then curl --remote-name http://download.geofabrik.de/europe/monaco-latest.osm.pbf ; fi) && node ./test.js monaco-latest.osm.pbf"
   },
   "devDependencies": {
     "express": "^4.13.4",

@@ -26,7 +26,7 @@ endif()
 set(BoostUnitTestLibrary ${Boost_LIBRARIES})
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
-SET(libosmium_INCLUDE_DIRS "../third_party/libosmium/include")
+SET(libosmium_INCLUDE_DIRS "../third_party/libosmium-2.6.1/include")
 
 target_include_directories(basic-tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${libosmium_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIR} ${EXPAT_INCLUDE_DIR} ${BZIP2_INCLUDE_DIR})
 

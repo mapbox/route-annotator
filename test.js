@@ -31,7 +31,7 @@ function main() {
       return console.error(err);
 
     app.listen(port, () => {
-      console.log(`Listening on localhost:${port}`);
+      console.log(`Listening on 0.0.0.0:${port}`);
     });
   });
 }

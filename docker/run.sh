@@ -10,10 +10,9 @@ fi
 
 docker run \
     --interactive \
-    --env="CXX=g++-5" \
-    --env="CC=gcc-5" \
     --volume=`pwd`:/home/mapbox/route-annotator \
     --tty \
+    --publish=5000:5000 \
     --workdir=/home/mapbox/route-annotator \
     mapbox/route-annotator:linux \
-    /bin/bash -c "source /opt/nvm/nvm.sh && npm install"
+    /bin/bash -c "source /opt/nvm/nvm.sh && npm test"
