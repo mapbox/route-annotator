@@ -22,7 +22,6 @@ SET(CMAKE_CXX_STANDARD 14)
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 FIND_PACKAGE(Threads REQUIRED)
-FIND_PACKAGE(OpenSSL 1.0.1 REQUIRED)
 FIND_PACKAGE(ZLIB)
 FIND_PACKAGE(BZip2)
 FIND_PACKAGE(EXPAT)
@@ -30,15 +29,8 @@ FIND_PACKAGE(EXPAT)
 FIND_PACKAGE(Boost 1.58.0 REQUIRED system thread filesystem chrono)
 ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK -DBOOST_SPIRIT_USE_PHOENIX_V3 -DBOOST_RESULT_OF_USE_DECLTYPE)
 
-# External dependency: run ./deps.sh
-
-SET(Casablanca_INCLUDE_DIRS "third_party/casablanca/Release/include")
-SET(Casablanca_LIBRARIES_DIRS "third_party/casablanca/Release/build/Binaries")
-SET(Casablanca_LIBRARIES cpprest ssl crypto)
-LINK_DIRECTORIES(${Casablanca_LIBRARIES_DIRS})
-
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libosmium/cmake")
-SET(OSMIUM_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libosmium/include")
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libosmium-2.6.1/cmake")
+SET(OSMIUM_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libosmium-2.6.1/include")
 FIND_PACKAGE(Osmium REQUIRED COMPONENTS io)
 
 
@@ -48,11 +40,6 @@ ADD_LIBRARY(annotator ${LibAnnotatorSources})
 TARGET_LINK_LIBRARIES(annotator ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OSMIUM_LIBRARIES})
 TARGET_INCLUDE_DIRECTORIES(annotator SYSTEM PUBLIC ${Boost_INCLUDE_DIRS} ${OSMIUM_INCLUDE_DIRS})
 SET_PROPERTY(TARGET annotator PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-# Build annotator daemon httpd for wrapping and linking in libannotator.{so,a}
-ADD_EXECUTABLE(route-annotatord src/server.cpp)
-TARGET_LINK_LIBRARIES(route-annotatord annotator ${Casablanca_LIBRARIES} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${EXPAT_LIBRARIES} ${BZIP2_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-TARGET_INCLUDE_DIRECTORIES(route-annotatord SYSTEM PUBLIC ${Casablanca_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 # Build Node.JS bindings, linking in libannotator.{so,a}
 # Note: instead of invoking this directly use "npm install"

@@ -1,0 +1,6 @@
+This creates a standardized build environment using Docker.
+
+
+Run ```./docker/create-build-image.sh``` to build a docker image.
+
+Run ```./docker/build.sh``` to build the code.
