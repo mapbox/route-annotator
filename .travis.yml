@@ -7,6 +7,9 @@ sudo: required
 services:
   - docker
 
+before_install:
+  - sed -i -e "s/useradd/useradd -u $(id -u) -g $(id -g)/" docker/Dockerfile
+
 install:
   - docker build -t mapbox/route-annotator:1.0 docker/
 
@@ -21,7 +24,7 @@ before_script:
   - ls -la
 
 script:
-  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/data --workdir=/data mapbox/route-annotator:1.0 /bin/bash -c "ls -la ; ls -la ~"
-  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/data --workdir=/data mapbox/route-annotator:1.0 /bin/bash -c "source /opt/nvm/nvm.sh && npm install"
-  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/data --workdir=/data --publish=5000:5000 mapbox/route-annotator:1.0 /bin/bash -c "source /opt/nvm/nvm.sh && npm test &"
+  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator mapbox/route-annotator:1.0 /bin/bash -c "id ; ls -la ; ls -la ~"
+  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator mapbox/route-annotator:1.0 /bin/bash -c "source /opt/nvm/nvm.sh && npm install"
+  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator --publish=5000:5000 mapbox/route-annotator:1.0 /bin/bash -c "source /opt/nvm/nvm.sh && npm test &"
   - curl "http://localhost:5000/coordlist/1,1;2,2"
