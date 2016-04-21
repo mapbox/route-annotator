@@ -305,7 +305,7 @@ NAN_METHOD(Annotator::getAllTagsForWayId)
         {
             Nan::HandleScope scope;
 
-            auto tags = Nan::New<v8::Array>(range.second - range.first);
+            auto tags = Nan::New<v8::Object>();
 
             std::size_t arrayIndex{0};
 
@@ -314,12 +314,8 @@ NAN_METHOD(Annotator::getAllTagsForWayId)
                 const auto key = self.annotator->get_tag_key(i);
                 const auto value = self.annotator->get_tag_value(i);
 
-                auto tag = Nan::New<v8::Array>(2);
-                (void)Nan::Set(tag, 0, Nan::New<v8::String>(key).ToLocalChecked());
-                (void)Nan::Set(tag, 1, Nan::New<v8::String>(value).ToLocalChecked());
-
-                (void)Nan::Set(tags, arrayIndex, tag);
-                arrayIndex += 1;
+                tags->Set(Nan::New(std::cref(key)).ToLocalChecked(),
+                          Nan::New(std::cref(value)).ToLocalChecked());
             }
 
             const constexpr auto argc = 2u;
