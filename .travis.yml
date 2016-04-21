@@ -23,7 +23,7 @@ notifications:
 before_script: cd app
 
 script:
-  - RUNPARAMS="--env=CXX=g++-5 --env=CC=gcc-5 --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator/app --workdir=/home/mapbox/route-annotator"
+  - RUNPARAMS="--env=CXX=g++-5 --env=CC=gcc-5 --volume=${TRAVIS_BUILD_DIR}/app:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator"
   - docker run ${RUNPARAMS} mapbox/route-annotator:1.0 bash -lc "npm install"
   # We do the download synchronously
   - docker run ${RUNPARAMS} mapbox/route-annotator:1.0 bash -lc "npm run test-setup"
