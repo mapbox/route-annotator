@@ -20,5 +20,6 @@ watch:
 
 clean:
 	@${RM} -rf ${BUILD_DIR}
+	@${RM} -rf node_modules
 
 .PHONE: all watch clean
