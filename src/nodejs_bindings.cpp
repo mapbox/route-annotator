@@ -307,8 +307,6 @@ NAN_METHOD(Annotator::getAllTagsForWayId)
 
             auto tags = Nan::New<v8::Object>();
 
-            std::size_t arrayIndex{0};
-
             for (auto i = range.first; i <= range.second; ++i)
             {
                 const auto key = self.annotator->get_tag_key(i);
