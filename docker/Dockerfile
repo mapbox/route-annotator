@@ -16,6 +16,6 @@ ENV HOME /home/mapbox
 
 WORKDIR /home/mapbox
 RUN echo "source /opt/nvm/nvm.sh" > .bashrc
-RUN echo "source .bashrc" > .profile
+RUN echo "source /home/mapbox/.bashrc" > .profile
 
 EXPOSE 5000
