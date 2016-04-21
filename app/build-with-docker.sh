@@ -16,4 +16,4 @@ docker run \
     --tty \
     --workdir=/home/mapbox/route-annotator \
     mapbox/route-annotator:linux \
-    /bin/bash -c "source /opt/nvm/nvm.sh && npm install"
+    /bin/bash -c "source /opt/nvm/nvm.sh && npm run build"

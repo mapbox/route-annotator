@@ -8,30 +8,27 @@ services:
   - docker
 
 before_install:
-  # The user we create inside the docker container needs to have the
-  # same UID/GID as the files on the travis bind volume we're going
-  # to mount
-  - sed -i -e "/useradd/i RUN groupadd -g $(id -g) mapbox" -e "s/useradd/useradd -u $(id -u) -g $(id -g)/" docker/Dockerfile
+  # Under Travis, the UID/GID aren't always 1000/1000.  When we
+  # create a user inside our docker container, the UID/GID
+  # needs to match the external UID/GID so that we can write
+  # to the bind-mounted volume from inside the container.
+  - sed -i -e "/useradd/i RUN groupadd -g $(id -g) mapbox" -e "s/useradd/useradd -u $(id -u) -g $(id -g)/" app/Dockerfile
 
 install:
-  - docker build -t mapbox/route-annotator:1.0 docker/
+  - docker build -t mapbox/route-annotator:1.0 app/
 
 notifications:
   email: true
 
-before_script:
-  - cd ${TRAVIS_BUILD_DIR}
-  - echo ${TRAVIS_BUILD_DIR}
-  - pwd
-  - export CC=${CCOMPILER} CXX=${CXXCOMPILER}
-  - ls -la
+before_script: cd app
 
 script:
-  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator mapbox/route-annotator:1.0 bash -lc "npm install"
+  - RUNPARAMS="--env=CXX=g++-5 --env=CC=gcc-5 --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator/app --workdir=/home/mapbox/route-annotator"
+  - docker run ${RUNPARAMS} mapbox/route-annotator:1.0 bash -lc "npm install"
   # We do the download synchronously
-  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator mapbox/route-annotator:1.0 bash -lc "npm run test-setup"
+  - docker run ${RUNPARAMS} mapbox/route-annotator:1.0 bash -lc "npm run test-setup"
   # Now run the demo server and detach
-  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator --publish=5000:5000 --detach mapbox/route-annotator:1.0 bash -lc "npm test"
+  - docker run ${RUNPARAMS} --publish=5000:5000 --detach mapbox/route-annotator:1.0 bash -lc "npm test"
   - sleep 2 # Wait for the daemon to start up
   - curl "http://localhost:5000/coordlist/7.422155,43.7368838;7.4230139,43.7369751"
   - docker logs $(docker ps -l -q)
