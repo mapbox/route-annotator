@@ -27,9 +27,12 @@ before_script:
   - ls -la
 
 script:
-  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator mapbox/route-annotator:1.0 /bin/bash -c "source /opt/nvm/nvm.sh && npm install"
-  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator --publish=5000:5000 --detach mapbox/route-annotator:1.0 /bin/bash -c "source /opt/nvm/nvm.sh && npm test"
-  - sleep 10 # Wait for the daemon to start up
-  - curl "http://localhost:5000/coordlist/1,1;2,2"
+  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator mapbox/route-annotator:1.0 npm install
+  # We do the download synchronously
+  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator --publish=5000:5000 --detach mapbox/route-annotator:1.0 npm test-setup
+  # Now run the demo server and detach
+  - docker run --env="CXX=g++-5" --env="CC=gcc-5" --volume=${TRAVIS_BUILD_DIR}:/home/mapbox/route-annotator --workdir=/home/mapbox/route-annotator --publish=5000:5000 --detach mapbox/route-annotator:1.0 npm test
+  - sleep 2 # Wait for the daemon to start up
+  - curl "http://localhost:5000/coordlist/7.422155,43.7368838;7.4230139,43.7369751"
   - docker logs $(docker ps -l -q)
   - docker stop $(docker ps -l -q)

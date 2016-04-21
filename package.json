@@ -12,11 +12,15 @@
   "main": "index.js",
   "scripts": {
     "install": "ncmake --build --config Release -DNODEJS=ON build",
-    "test": "(if [ ! -f monaco-latest.osm.pbf ] ; then curl --remote-name http://download.geofabrik.de/europe/monaco-latest.osm.pbf ; fi) && node ./test.js monaco-latest.osm.pbf"
+    "test-setup": "if [ ! -f monaco-latest.osm.pbf ] ; then curl --remote-name http://download.geofabrik.de/europe/monaco-latest.osm.pbf ; fi",
+    "test": "node ./test.js monaco-latest.osm.pbf"
   },
   "devDependencies": {
     "express": "^4.13.4",
     "nan": "^2.2.1",
     "node-cmake": "^1.2.0"
+  },
+  "dependencies": {
+    "async": "^2.0.0-rc.3"
   }
 }
