@@ -2,7 +2,7 @@
 
 const bindings = require('./index');
 const express = require('express');
-
+const async = require('async');
 
 function main() {
   const argv = process.argv.slice(1);
@@ -77,9 +77,22 @@ function coordListHandler(annotator) {
       if (err)
         return res.sendStatus(400);
 
-      // TODO(daniel-j-h): standardize format for {wayId, tags}, accumulate and send back
-      // wayIds.map(annotator.getAllTagsForWayId(wayId, (err, tags) => {}));
-      res.json({'message': 'Danpat needs to standardize a format'});
+      var response = {"way_indexes": [], "ways_seen": []};
+      var way_indexes = {};
+
+      async.each(wayIds, (way_id, next) => {
+          annotator.getAllTagsForWayId(way_id, (err, tags) => {
+              var wid = tags["_way_id"];
+              if (!way_indexes.hasOwnProperty(wid)) {
+                way_indexes[wid] = Object.keys(way_indexes).length;
+                response.ways_seen.push(tags);
+              }
+              response.way_indexes.push(way_indexes[wid]);
+              next();
+          });
+      }, (err, data) => {
+          res.json(response);
+      });
     });
   };
 }
