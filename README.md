@@ -1,6 +1,6 @@
 # Route Annotator
 
-This is a node module that indexes connected node pairs in OSM data, and allows you to query for
+This is a NodeJS module that indexes connected node pairs in OSM data, and allows you to query for
 meta-data.  It's useful for retrieving tag information when you have geometry from your basemap.
 
 ## Building
@@ -25,6 +25,8 @@ curl "http://localhost:5000/coordlist/7.422155,43.7368838;7.4230139,43.7369751"
 ```
 
 ### Builing locally
+
+*All*: You'll need NodeJS 4.x
 
 *Linux:* See `apt-get` commands in the `Dockerfile`
 
