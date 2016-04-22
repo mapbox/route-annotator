@@ -7,12 +7,16 @@
     "native",
     "module"
   ],
+  "repository" : { 
+    "type" : "git", 
+    "url" : "https://github.com/mapbox/route-annotator.git"
+  },
   "author": "Mapbox",
-  "license": "ISC",
+  "license": "See LICENSE.txt file",
   "main": "index.js",
   "scripts": {
-    "node-pre-gyp": "npm_config_node_gyp=ncmake node-pre-gyp install --fallback-to-build",
-    "install": "ncmake --build --config Release -DNODEJS=ON build"
+    "install": "node-pre-gyp install",
+    "cmake": "ncmake --build --config Release -DNODEJS=ON build"
   },
   "devDependencies": {
     "express": "^4.13.4",
