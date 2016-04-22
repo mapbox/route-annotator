@@ -10,10 +10,8 @@ fi
 
 docker run \
     --interactive \
-    --env="CXX=g++-5" \
-    --env="CC=gcc-5" \
     --volume=`pwd`:/home/mapbox/route-annotator \
     --tty \
     --workdir=/home/mapbox/route-annotator \
     mapbox/route-annotator:linux \
-    /bin/bash -c "source /opt/nvm/nvm.sh && npm run build"
+    /bin/bash -lc "npm install"

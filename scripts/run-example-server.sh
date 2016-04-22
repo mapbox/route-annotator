@@ -15,4 +15,4 @@ docker run \
     --publish=5000:5000 \
     --workdir=/home/mapbox/route-annotator \
     mapbox/route-annotator:linux \
-    /bin/bash -c "source /opt/nvm/nvm.sh && npm test"
+    /bin/bash -lc "node ./example-server.js monaco-latest.osm.pbf"

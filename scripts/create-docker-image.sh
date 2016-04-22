@@ -10,5 +10,5 @@ fi
 
 docker build \
     -t mapbox/route-annotator:linux \
-    docker/
+    .
 
