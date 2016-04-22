@@ -28,7 +28,7 @@ curl "http://localhost:5000/coordlist/7.422155,43.7368838;7.4230139,43.7369751"
 
 *Linux:* See `apt-get` commands in the `Dockerfile`
 
-*Homebrew:* `??? (brew install cmake git boost stxxl)```
+*Homebrew:* `??? (brew install cmake git boost stxxl)`
 
 Then:
 ```
