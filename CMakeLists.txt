@@ -5,15 +5,11 @@ PROJECT(route_annotator VERSION 0.0.1 LANGUAGES C CXX)
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+  set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "${CMAKE_SHARED_LIBRARY_LINK_C_FLAGS} -static-libgcc -s")
+  set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS} -static-libgcc -static-libstdc++ -s")
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  # Prefer a homebrew version of OpenSSL over the one in /usr/lib
-  FILE(GLOB OPENSSL_ROOT_DIR /usr/local/Cellar/openssl/*)
-  # Prefer the latest (make the latest one first)
-  LIST(REVERSE OPENSSL_ROOT_DIR)
-  # This should prevent linking against the system provided 0.9.8y
-  SET(_OPENSSL_VERSION "")
-
-  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework CoreFoundation -framework CoreServices -framework Security")
 ELSE()
   MESSAGE(FATAL_ERROR "Unsupported system")
 ENDIF()
