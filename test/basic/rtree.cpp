@@ -7,23 +7,19 @@
 
 BOOST_AUTO_TEST_SUITE(rtree_test)
 
-// Verify that the bearing-bounds checking function behaves as expected
-BOOST_AUTO_TEST_CASE(rtree_basic_test)
-{
-    Database db;
-
-    db.used_nodes_list.emplace_back(point_t{1, 1}, 73);
-    db.compact();
-    BOOST_CHECK_EQUAL(db.rtree->size(), 1);
-}
-
 BOOST_AUTO_TEST_CASE(rtree_not_initialized)
 {
     Database db;
 
     static const internal_nodeid_t TESTNODE{73};
 
-    db.used_nodes_list.emplace_back(point_t{1, 1}, TESTNODE);
+/*
+    std::vector<value_t> used_nodes_list;
+    used_nodes_list.emplace_back(point_t{1, 1}, TESTNODE);
+    db.rtree =
+        std::make_unique<boost::geometry::index::rtree<value_t, boost::geometry::index::rstar<8>>>(
+            used_nodes_list.begin(), used_nodes_list.end());
+*/
 
     RouteAnnotator annotator(db);
 
@@ -37,8 +33,11 @@ BOOST_AUTO_TEST_CASE(rtree_radius_test)
 
     static const internal_nodeid_t TESTNODE{73};
 
-    db.used_nodes_list.emplace_back(point_t{1, 1}, TESTNODE);
-    db.compact();
+    std::vector<value_t> used_nodes_list;
+    used_nodes_list.emplace_back(point_t{1, 1}, TESTNODE);
+    db.rtree =
+        std::make_unique<boost::geometry::index::rtree<value_t, boost::geometry::index::rstar<8>>>(
+            used_nodes_list.begin(), used_nodes_list.end());
 
     RouteAnnotator annotator(db);
 
@@ -67,8 +66,13 @@ BOOST_AUTO_TEST_CASE(rtree_radius_test)
 
     // Test at high latitudes
     db = Database();
-    db.used_nodes_list.emplace_back(point_t{1, 65}, TESTNODE);
-    db.compact();
+
+    used_nodes_list.clear();
+    used_nodes_list.emplace_back(point_t{1, 65}, TESTNODE);
+    db.rtree =
+        std::make_unique<boost::geometry::index::rtree<value_t, boost::geometry::index::rstar<8>>>(
+            used_nodes_list.begin(), used_nodes_list.end());
+
 
     // This should be about 0.45m
     points = std::vector<point_t>{point_t{1.00001, 65}};

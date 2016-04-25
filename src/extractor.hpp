@@ -22,6 +22,7 @@ struct Extractor final : osmium::handler::Handler
      * @param d the Database object where everything will end up
      */
     Extractor(const std::string &osmfilename, Database &d);
+    ~Extractor();
 
     /**
      * Constructs an extractor from in-memory OSM XML data.
@@ -45,4 +46,8 @@ struct Extractor final : osmium::handler::Handler
     // Internal reference to the db we're going to dump everything
     // into
     Database &db;
+
+    // A temporary list of the nodes that we actually used
+    std::vector<value_t> used_nodes_list;
+
 };

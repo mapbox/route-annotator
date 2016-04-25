@@ -2,14 +2,10 @@
 
 void Database::compact()
 {
-    rtree =
-        std::make_unique<boost::geometry::index::rtree<value_t, boost::geometry::index::rstar<8>>>(
-            used_nodes_list.begin(), used_nodes_list.end());
 
     // Tricks to free memory, swap out data with empty versions
     // This frees the memory.  shrink_to_fit doesn't guarantee that.
-    std::vector<value_t>().swap(used_nodes_list);
-    std::unordered_map<std::string, std::uint32_t>().swap(string_index);
+    google::sparse_hash_map<std::string, std::uint32_t>().swap(string_index);
 
     // Hint that these data structures can be shrunk.
     string_data.shrink_to_fit();
@@ -35,7 +31,7 @@ stringid_t Database::addstring(const char *str)
     if (idx == string_index.end())
     {
         BOOST_ASSERT(string_index.size() < std::numeric_limits<std::uint32_t>::max());
-        string_index.emplace(str, static_cast<uint32_t>(string_index.size()));
+        string_index[str] = static_cast<uint32_t>(string_index.size());
         auto string_length =
             static_cast<std::uint32_t>(std::min<std::size_t>(255, std::strlen(str)));
         std::copy(str, str + string_length, std::back_inserter(string_data));

@@ -63,14 +63,14 @@ RouteAnnotator::external_to_internal(const std::vector<external_nodeid_t> &exter
     std::for_each(external_nodeids.begin(), external_nodeids.end(),
                   [this, &results](const external_nodeid_t n) {
                       const auto internal_node_id = db.external_internal_map.find(n);
-                      if (internal_node_id == db.external_internal_map.end())
+                      if (db.external_internal_map.count(n) == 0)
                       {
                           // Push an invalid nodeid into the list if we didn't match
                           results.push_back(INVALID_INTERNAL_NODEID);
                       }
                       else
                       {
-                          results.push_back(internal_node_id->second);
+                          results.push_back((internal_node_id)->second);
                       }
                   });
     return results;
@@ -85,7 +85,7 @@ annotated_route_t RouteAnnotator::annotateRoute(const std::vector<internal_nodei
         const auto way_id = db.pair_way_map.find(std::make_pair(route[i], route[i + 1]));
         if (way_id != db.pair_way_map.end())
         {
-            result.push_back(way_id->second);
+            result.push_back((way_id)->second);
         }
         else
         {

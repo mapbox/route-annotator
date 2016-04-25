@@ -15,7 +15,7 @@ BOOST_AUTO_TEST_CASE(annotator_test_basic)
     const auto valueid = db.addstring("primary");
     db.key_value_pairs.emplace_back(keyid, valueid);
     db.way_tag_ranges.emplace_back(0,0);
-    db.pair_way_map.emplace(internal_nodepair_t{0,1}, 0);
+    db.pair_way_map[internal_nodepair_t{0,1}] = 0;
     db.compact();
     RouteAnnotator annotator(db);
 
@@ -53,10 +53,10 @@ BOOST_AUTO_TEST_CASE(annotator_test_externalids)
 {
 
     Database db;
-    db.pair_way_map.emplace(internal_nodepair_t{0,1}, 0);
-    db.external_internal_map.emplace(12345,7);
-    db.external_internal_map.emplace(12346,9);
-    db.external_internal_map.emplace(12347,13);
+    db.pair_way_map[internal_nodepair_t{0,1}] = 0;
+    db.external_internal_map[12345] = 7;
+    db.external_internal_map[12346] = 9;
+    db.external_internal_map[12347] = 13;
     db.compact();
     RouteAnnotator annotator(db);
 
@@ -75,13 +75,20 @@ BOOST_AUTO_TEST_CASE(annotator_test_externalids)
 BOOST_AUTO_TEST_CASE(annotator_test_coordinates)
 {
 
-    Database db;
-    db.used_nodes_list.emplace_back(point_t{1, 1}, 7);
-    db.used_nodes_list.emplace_back(point_t{2, 2}, 9);
-    db.used_nodes_list.emplace_back(point_t{3, 3}, 13);
-    db.compact();
-    RouteAnnotator annotator(db);
+    std::vector<value_t> used_nodes_list;
 
+    used_nodes_list.emplace_back(point_t{1, 1}, 7);
+    used_nodes_list.emplace_back(point_t{2, 2}, 9);
+    used_nodes_list.emplace_back(point_t{3, 3}, 13);
+
+    Database db;
+    db.rtree =
+        std::make_unique<boost::geometry::index::rtree<value_t, boost::geometry::index::rstar<8>>>(
+            used_nodes_list.begin(), used_nodes_list.end());
+
+    db.compact();
+
+    RouteAnnotator annotator(db);
 
     // Check that we match the expected coordinates
     std::vector<point_t> coordinates{point_t{1,1},point_t{1.5,1.5}, point_t{2,2}, point_t{3,1}};

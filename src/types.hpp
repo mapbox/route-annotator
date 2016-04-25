@@ -3,7 +3,8 @@
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
-#include <unordered_map>
+#include <sparsehash/sparse_hash_map>
+//#include <stxxl/unordered_map>
 
 // Type declarations for node ids and way ids.  We don't need the full 64 bits
 // for ways as the highest way number isn't close to 2^32 yet.
@@ -23,7 +24,7 @@ typedef std::pair<point_t, internal_nodeid_t> value_t;
 // Data types for our lookup tables
 typedef std::pair<internal_nodeid_t, internal_nodeid_t> internal_nodepair_t;
 
-typedef std::unordered_map<external_nodeid_t, internal_nodeid_t> external_internal_map_t;
+typedef google::sparse_hash_map<external_nodeid_t, internal_nodeid_t> external_internal_map_t;
 
 typedef std::vector<wayid_t> annotated_route_t;
 
@@ -54,4 +55,13 @@ template <> struct hash<internal_nodepair_t>
         return (static_cast<std::uint64_t>(v.first) << 32) + v.second;
     }
 };
+namespace tr1 {
+template <> struct hash<internal_nodepair_t>
+{
+    inline size_t operator()(const internal_nodepair_t &v) const
+    {
+        return (static_cast<std::uint64_t>(v.first) << 32) + v.second;
+    }
+};
+}
 }

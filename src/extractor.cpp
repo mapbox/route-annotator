@@ -26,8 +26,10 @@
 typedef osmium::index::map::Dummy<osmium::unsigned_object_id_type, osmium::Location> index_neg_type;
 typedef osmium::index::map::SparseMemArray<osmium::unsigned_object_id_type, osmium::Location>
     index_pos_type;
-// typedef osmium::index::map::DenseMmapArray<osmium::unsigned_object_id_type, osmium::Location>
-// index_pos_type;
+//typedef osmium::index::map::SparseFileArray<osmium::unsigned_object_id_type, osmium::Location>
+    //index_pos_type;
+//typedef osmium::index::map::DenseMmapArray<osmium::unsigned_object_id_type, osmium::Location>
+//index_pos_type;
 typedef osmium::handler::NodeLocationsForWays<index_pos_type, index_neg_type> location_handler_type;
 
 Extractor::Extractor(const std::string &osmfilename, Database &db) : db(db)
@@ -50,6 +52,10 @@ Extractor::Extractor(const std::string &osmfilename, Database &db) : db(db)
     std::cerr << "Number of node pairs indexed: " << db.pair_way_map.size() << "\n";
     std::cerr << "Number of ways indexed: " << db.way_tag_ranges.size() << "\n";
 
+}
+
+Extractor::~Extractor()
+{
     std::cerr << "Constructing RTree ... " << std::flush;
     db.compact();
     std::cerr << "done\n" << std::flush;
@@ -77,6 +83,10 @@ Extractor::Extractor(const char * buffer, std::size_t buffersize, const std::str
     std::cerr << "Number of ways indexed: " << db.way_tag_ranges.size() << "\n";
 
     std::cerr << "Constructing RTree ... " << std::flush;
+    db.rtree =
+        std::make_unique<boost::geometry::index::rtree<value_t, boost::geometry::index::rstar<8>>>(
+            used_nodes_list.begin(), used_nodes_list.end());
+
     db.compact();
     std::cerr << "done\n" << std::flush;
     db.dump();
@@ -149,9 +159,9 @@ void Extractor::way(const osmium::Way &way)
 
                     if (tmp_a == db.external_internal_map.end())
                     {
-                        internal_a_id = static_cast<internal_nodeid_t>(db.used_nodes_list.size());
-                        db.used_nodes_list.emplace_back(a, internal_a_id);
-                        db.external_internal_map.emplace(pair.get<0>().ref(), internal_a_id);
+                        internal_a_id = static_cast<internal_nodeid_t>(used_nodes_list.size());
+                        used_nodes_list.emplace_back(a, internal_a_id);
+                        db.external_internal_map[pair.get<0>().ref()] = internal_a_id;
                     }
                     else
                     {
@@ -161,9 +171,9 @@ void Extractor::way(const osmium::Way &way)
                     const auto tmp_b = db.external_internal_map.find(pair.get<1>().ref());
                     if (tmp_b == db.external_internal_map.end())
                     {
-                        internal_b_id = static_cast<internal_nodeid_t>(db.used_nodes_list.size());
-                        db.used_nodes_list.emplace_back(b, internal_b_id);
-                        db.external_internal_map.emplace(pair.get<1>().ref(), internal_b_id);
+                        internal_b_id = static_cast<internal_nodeid_t>(used_nodes_list.size());
+                        used_nodes_list.emplace_back(b, internal_b_id);
+                        db.external_internal_map[pair.get<1>().ref()] = internal_b_id;
                     }
                     else
                     {
@@ -172,13 +182,11 @@ void Extractor::way(const osmium::Way &way)
 
                     if (forward)
                     {
-                        db.pair_way_map.emplace(std::make_pair(internal_a_id, internal_b_id),
-                                                way_id);
+                        db.pair_way_map[std::make_pair(internal_a_id, internal_b_id)] = way_id;
                     }
                     if (reverse)
                     {
-                        db.pair_way_map.emplace(std::make_pair(internal_b_id, internal_a_id),
-                                                way_id);
+                        db.pair_way_map[std::make_pair(internal_b_id, internal_a_id)] = way_id;
                     }
                 }
                 catch (const osmium::invalid_location &e)
