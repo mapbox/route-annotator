@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.1 FATAL_ERROR)
 
 # Note: project name is used for Node.JS bindings (shared lib); must not contain e.g. "-"
-PROJECT(route_annotator VERSION 0.0.1 LANGUAGES C CXX)
+PROJECT(route_annotator VERSION 0.0.2 LANGUAGES C CXX)
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")

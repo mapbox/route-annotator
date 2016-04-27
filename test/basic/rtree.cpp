@@ -76,8 +76,8 @@ BOOST_AUTO_TEST_CASE(rtree_radius_test)
     BOOST_CHECK_EQUAL(results.size(), 1);
     BOOST_CHECK_EQUAL(results[0], TESTNODE);
 
-    // This should be about 1.5m (so should NOT match)
-    points = std::vector<point_t>{point_t{1.00003, 65}};
+    // This should be about 6.5m (so should NOT match)
+    points = std::vector<point_t>{point_t{1.00013, 65}};
     results = annotator.coordinates_to_internal(points);
     BOOST_CHECK_EQUAL(results.size(), 1);
     BOOST_CHECK_EQUAL(results[0], INVALID_INTERNAL_NODEID);

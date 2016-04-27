@@ -17,7 +17,7 @@ RouteAnnotator::coordinates_to_internal(const std::vector<point_t> &points)
 {
 
     static const boost::geometry::strategy::distance::haversine<double> haversine(6372795.0);
-    static const double MAX_DISTANCE = 1;
+    static const double MAX_DISTANCE = 5;
 
     if (!db.rtree)
         throw std::runtime_error("RTree is null - need to call compact() on database before use");

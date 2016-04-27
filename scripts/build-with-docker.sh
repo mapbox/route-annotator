@@ -14,4 +14,4 @@ docker run \
     --tty \
     --workdir=/home/mapbox/route-annotator \
     mapbox/route-annotator:linux \
-    /bin/bash -lc "npm install"
+    /bin/bash -lc "npm run cmake"
