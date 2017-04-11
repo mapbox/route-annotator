@@ -120,5 +120,3 @@ matrix:
         - curl -S -f https://codecov.io/bash -o codecov
         - chmod +x codecov
         - ./codecov -x "llvm-cov gcov" -Z
-        # now test the local coverage build (just to ensure it is working)
-        - make coverage

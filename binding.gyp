@@ -17,10 +17,10 @@
       'hard_dependency': 1,
       'actions': [
         {
-          'action_name': 'install_deps',
-          'inputs': ['./scripts/install_deps.sh'],
+          'action_name': 'install_mason',
+          'inputs': ['./install_mason.sh'],
           'outputs': ['./mason_packages'],
-          'action': ['./scripts/install_deps.sh']
+          'action': ['./install_mason.sh']
         }
       ]
     },
@@ -28,7 +28,6 @@
       'target_name': 'annotator',
       "type": "static_library",
       'hard_dependency': 1,
-      'dependencies': [ 'action_before_build' ],
       'sources': [
         './src/annotator.cpp',
         './src/database.cpp',
@@ -51,7 +50,7 @@
     },
     {
       'target_name': '<(module_name)',
-      'dependencies': [ 'annotator' ],
+      'dependencies': [ 'action_before_build', 'annotator' ],
       'product_dir': '<(module_path)',
       'sources': [
         './src/nodejs_bindings.cpp'
@@ -94,7 +93,7 @@
     },
     {
       'target_name': 'cxx-tests',
-      'dependencies': [ 'annotator' ],
+      'dependencies': [ 'action_before_build', 'annotator' ],
       'type': 'executable',
       'sources': [
         './test/basic-tests.cpp',
