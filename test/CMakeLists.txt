@@ -27,9 +27,10 @@ endif()
 set(BoostUnitTestLibrary ${Boost_LIBRARIES})
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
-SET(libosmium_INCLUDE_DIRS "../third_party/libosmium-2.6.1/include")
+SET(LIBOSMIUM_INCLUDE_DIRS "../third_party/libosmium-2.6.1/include")
+SET(SPARSEPP_INCLUDE_DIR "../third_party/sparsepp")
 
-target_include_directories(basic-tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${libosmium_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIR} ${EXPAT_INCLUDE_DIR} ${BZIP2_INCLUDE_DIR})
+target_include_directories(basic-tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../src ${LIBOSMIUM_INCLUDE_DIRS} ${SPARSEPP_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIR} ${EXPAT_INCLUDE_DIR} ${BZIP2_INCLUDE_DIR})
 
 target_link_libraries(basic-tests ${BoostUnitTestLibrary} ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES} ${EXPAT_LIBRARIES} ${BZIP2_LIBRARIES} ${THREADS_LIBRARIES})
 add_custom_target(all-tests
