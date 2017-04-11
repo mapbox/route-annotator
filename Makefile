@@ -16,7 +16,7 @@ release: node_modules
 
 test: ${BUILD_DIR}/Makefile
 	@cmake --build ${BUILD_DIR} --target all-tests
-	# ${BUILD_DIR}/test/basic-tests
+	${BUILD_DIR}/test/basic-tests
 	${BUILD_DIR}/test/congestion-tests
 
 debug: node_modules

@@ -51,6 +51,6 @@ target_include_directories(congestion-tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} $
 target_link_libraries(congestion-tests ${BoostUnitTestLibrary} ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES} ${EXPAT_LIBRARIES} ${BZIP2_LIBRARIES} ${THREADS_LIBRARIES})
 
 add_custom_target(all-tests
-	DEPENDS
-	basic-tests
+    DEPENDS
+    basic-tests
     congestion-tests)
