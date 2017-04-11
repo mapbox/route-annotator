@@ -14,6 +14,11 @@ release: node_modules
 	V=1 ./node_modules/.bin/node-pre-gyp configure build --error_on_warnings=$(WERROR) --loglevel=error
 	@echo "run 'make clean' for full rebuild"
 
+test: ${BUILD_DIR}/Makefile
+	@cmake --build ${BUILD_DIR} --target all-tests
+	# ${BUILD_DIR}/test/basic-tests
+	${BUILD_DIR}/test/congestion-tests
+
 debug: node_modules
 	V=1 ./node_modules/.bin/node-pre-gyp configure build --error_on_warnings=$(WERROR) --loglevel=error --debug
 	@echo "run 'make clean' for full rebuild"
