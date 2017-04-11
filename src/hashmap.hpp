@@ -37,11 +37,12 @@ class Hashmap {
     // TODO: turn into private
     public:
         void add(external_nodeid_t to, external_nodeid_t from, speed_t speed);
-        bool hasKey(external_nodeid_t to, external_nodeid_t from);
 
     public:
         void loadData(std::ifstream input);
         speed_t getValue(external_nodeid_t to, external_nodeid_t from);
+        bool hasKey(external_nodeid_t to, external_nodeid_t from);
 
-    sparse_hash_map<Way, int> annotations;
+    private:
+        sparse_hash_map<Way, int> annotations;
 };
