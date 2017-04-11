@@ -1,6 +1,7 @@
 build
-
+lib/binding
 node_modules
 npm-debug.log
-
+mason
+mason_packages
 nodes.cache
