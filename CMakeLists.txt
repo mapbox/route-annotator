@@ -29,12 +29,14 @@ LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libosmium
 SET(OSMIUM_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libosmium-2.6.1/include")
 FIND_PACKAGE(Osmium REQUIRED COMPONENTS io)
 
+SET(SPARSEPP_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/sparsepp")
+
 
 # Build libannotator.{so,a} for both the annotator daemon as well as our (optional) Node bindings
 SET(LibAnnotatorSources	src/annotator.cpp src/database.cpp src/hashmap.cpp src/extractor.cpp)
 ADD_LIBRARY(annotator ${LibAnnotatorSources})
 TARGET_LINK_LIBRARIES(annotator ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OSMIUM_LIBRARIES})
-TARGET_INCLUDE_DIRECTORIES(annotator SYSTEM PUBLIC ${Boost_INCLUDE_DIRS} ${OSMIUM_INCLUDE_DIRS})
+TARGET_INCLUDE_DIRECTORIES(annotator SYSTEM PUBLIC ${Boost_INCLUDE_DIRS} ${OSMIUM_INCLUDE_DIRS} ${SPARSEPP_INCLUDE_DIR})
 SET_PROPERTY(TARGET annotator PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Build Node.JS bindings, linking in libannotator.{so,a}
