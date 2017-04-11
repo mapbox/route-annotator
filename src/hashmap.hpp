@@ -1,7 +1,8 @@
 #include <fstream>
 #include <iostream>
-#include "types.hpp"
 #include <sparsepp/spp.h>
+
+#include "types.hpp"
 
 using spp::sparse_hash_map;
 
