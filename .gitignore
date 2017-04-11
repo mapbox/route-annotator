@@ -7,3 +7,6 @@ mason_packages
 nodes.cache
 *profraw
 *profdata
+.mason
+.toolchain
+local.env
