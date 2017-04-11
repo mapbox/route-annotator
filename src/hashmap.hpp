@@ -3,6 +3,7 @@
 #include <sparsepp/spp.h>
 
 #include "types.hpp"
+#include <sparsepp/spp.h>
 
 using spp::sparse_hash_map;
 
