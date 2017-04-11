@@ -31,7 +31,6 @@ FIND_PACKAGE(Osmium REQUIRED COMPONENTS io)
 
 SET(SPARSEPP_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/sparsepp")
 
-
 # Build libannotator.{so,a} for both the annotator daemon as well as our (optional) Node bindings
 SET(LibAnnotatorSources	src/annotator.cpp src/database.cpp src/hashmap.cpp src/extractor.cpp)
 ADD_LIBRARY(annotator ${LibAnnotatorSources})
