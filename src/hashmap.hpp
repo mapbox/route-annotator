@@ -6,9 +6,9 @@
 
 using spp::sparse_hash_map;
 
-struct Way 
+struct Way
 {
-    bool operator==(const Way &o) const 
+    bool operator==(const Way &o) const
     { return to == o.to && from == o.from; }
 
     Way(int to, int from) : to(to), from(from) { }
@@ -35,12 +35,9 @@ namespace std
 }
 
 class Hashmap {
-    // TODO: turn into private
     public:
+        void loadData(std::ifstream& input);
         void add(external_nodeid_t to, external_nodeid_t from, speed_t speed);
-
-    public:
-        void loadData(std::ifstream input);
         speed_t getValue(external_nodeid_t to, external_nodeid_t from);
         bool hasKey(external_nodeid_t to, external_nodeid_t from);
 
