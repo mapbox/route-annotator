@@ -31,7 +31,7 @@ FIND_PACKAGE(Osmium REQUIRED COMPONENTS io)
 
 
 # Build libannotator.{so,a} for both the annotator daemon as well as our (optional) Node bindings
-SET(LibAnnotatorSources	src/annotator.cpp src/database.cpp src/extractor.cpp)
+SET(LibAnnotatorSources	src/annotator.cpp src/database.cpp src/hashmap.cpp src/extractor.cpp)
 ADD_LIBRARY(annotator ${LibAnnotatorSources})
 TARGET_LINK_LIBRARIES(annotator ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OSMIUM_LIBRARIES})
 TARGET_INCLUDE_DIRECTORIES(annotator SYSTEM PUBLIC ${Boost_INCLUDE_DIRS} ${OSMIUM_INCLUDE_DIRS})

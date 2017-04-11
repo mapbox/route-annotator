@@ -2,6 +2,7 @@ file(GLOB BasicTestSources
     basic-tests.cpp
     basic/*.cpp
     ../src/database.cpp
+    ../src/hashmap.cpp
     ../src/annotator.cpp
     ../src/extractor.cpp)
 
