@@ -21,7 +21,7 @@ namespace std
 {
     // inject specialization of std::hash for Way into namespace std
     // ----------------------------------------------------------------
-    template<> 
+    template<>
     struct hash<Way>
     {
         std::size_t operator()(Way const &p) const

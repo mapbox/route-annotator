@@ -10,7 +10,7 @@ void Hashmap::add(external_nodeid_t to, external_nodeid_t from, speed_t speed) {
 bool Hashmap::hasKey(external_nodeid_t to, external_nodeid_t from) {
 
     auto lookup = annotations.find(Way(to,from));
-    
+
     if(lookup != annotations.end()) {
         return true;
     } else {
