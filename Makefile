@@ -42,7 +42,20 @@ xcode: node_modules
 docs:
 	npm run docs
 
-test:
+npmtest:
+	@echo "Running nodejs tests..."
 	npm test
+
+test-release: release npmtest
+	@echo "Running CXX tests..."
+	./build/Release/basic-tests
+	./build/Release/congestion-tests
+
+test-debug: debug npmtest
+	@echo "Running CXX tests..."
+	./build/Debug/basic-tests
+	./build/Debug/congestion-tests
+
+test: test-release
 
 .PHONY: test docs
