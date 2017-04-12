@@ -51,4 +51,6 @@ test-debug: npmtest
 	./build/Debug/basic-tests
 	./build/Debug/congestion-tests
 
+test: test-release
+
 .PHONY: test docs
