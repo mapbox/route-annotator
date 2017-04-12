@@ -5,7 +5,9 @@ using spp::sparse_hash_map;
 
 Hashmap::Hashmap() {};
 
-Hashmap::Hashmap(std::ifstream& input) {
+Hashmap::Hashmap(std::string input_filename) {
+    std::ifstream input(input_filename, std::ifstream::in);
+
     std::string line;
     external_nodeid_t to;
     external_nodeid_t from;
@@ -40,6 +42,42 @@ Hashmap::Hashmap(std::ifstream& input) {
     }
     input.close();
 };
+
+// Hashmap::Hashmap(std::ifstream& input) {
+//     std::string line;
+//     external_nodeid_t to;
+//     external_nodeid_t from;
+//     congestion_speed_t speed;
+//     std::string str_to;
+//     std::string str_from;
+//     std::string str_speed;
+
+//     if (input)
+//     {
+//         while (getline(input, line))
+//         {
+//             try
+//             {
+//                 std::stringstream iss;
+//                 iss << line;
+//                 std::getline(iss, str_to, ',');
+//                 to = std::stoull(str_to);
+//                 std::getline(iss, str_from, ',');
+//                 from = std::stoull(str_from);
+//                 std::getline(iss, str_speed, ',');
+//                 speed = std::stoull(str_speed);
+
+//                 add(to, from, speed);
+//             }
+//             catch (std::exception& e)
+//             {
+//                 std::cout << "Input input has invalid format." << std::endl;
+//                 std::cout << e.what() << std::endl;
+//             }
+//         }
+//     }
+//     input.close();
+// };
 
 void Hashmap::add(external_nodeid_t to, external_nodeid_t from, congestion_speed_t speed) {
     Hashmap::annotations[Way(to, from)] = speed;

@@ -55,7 +55,8 @@
       'dependencies': [ 'action_before_build', 'annotator' ],
       'product_dir': '<(module_path)',
       'sources': [
-        './src/nodejs_bindings.cpp'
+        './src/nodejs_bindings.cpp',
+        './src/lookup_bindings.cpp'
       ],
       'conditions': [
         ['error_on_warnings == "true"', {
