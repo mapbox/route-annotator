@@ -56,10 +56,8 @@ function run() {
     function setup_mason() {
       local install_dir=${1}
       local mason_release=${2}
-      if [[ ! -d ${install_dir} ]]; then
-          mkdir -p ${install_dir}
-          curl -sSfL https://github.com/mapbox/mason/archive/v${mason_release}.tar.gz | tar --gunzip --extract --strip-components=1 --directory=${install_dir}
-      fi
+      mkdir -p ${install_dir}
+      curl -sSfL https://github.com/mapbox/mason/archive/v${mason_release}.tar.gz | tar --gunzip --extract --strip-components=1 --directory=${install_dir}
     }
 
     setup_mason $(pwd)/.mason ${MASON_RELEASE}
