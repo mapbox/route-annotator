@@ -43,8 +43,8 @@ npmtest:
 
 test-release: release npmtest
 	@echo "Running CXX tests..."
-	./build/Release/basic-tests
-	./build/Release/congestion-tests
+	./build/Release/basic-tests -x
+	./build/Release/congestion-tests -x
 
 test-debug: debug npmtest
 	@echo "Running CXX tests..."
