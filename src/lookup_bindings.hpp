@@ -12,7 +12,7 @@ public:
 private:
   static NAN_METHOD(New);
 
-  // static NAN_METHOD(GetAnnotations);
+  static NAN_METHOD(GetAnnotations);
 
   static Nan::Persistent<v8::Function>& constructor(); //CPP Land
 

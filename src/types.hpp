@@ -7,7 +7,7 @@
 
 // Type declarations for node ids and way ids.  We don't need the full 64 bits
 // for ways as the highest way number isn't close to 2^32 yet.
-typedef std::uint64_t external_nodeid_t;
+typedef std::int64_t external_nodeid_t;
 typedef std::uint32_t internal_nodeid_t;
 typedef std::uint32_t wayid_t;
 typedef std::uint32_t congestion_speed_t;

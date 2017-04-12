@@ -11,7 +11,7 @@ NAN_MODULE_INIT(Lookup::Init) {
   fnTp->SetClassName(whoami);
   fnTp->InstanceTemplate()->SetInternalFieldCount(1);
 
-  // SetPrototypeMethod(fnTp, "GetAnnotations", GetAnnotations);
+  SetPrototypeMethod(fnTp, "GetAnnotations", GetAnnotations);
 
   const auto fn = Nan::GetFunction(fnTp).ToLocalChecked();
   constructor().Reset(fn);
@@ -50,108 +50,127 @@ NAN_METHOD(Lookup::New) {
 
 NAN_METHOD(Lookup::GetAnnotations) {
   auto* const self = Nan::ObjectWrap::Unwrap<Lookup>(info.Holder());
+  (void) self;
 
   if (info.Length() != 1 || !info[0]->IsArray())
     return Nan::ThrowTypeError("One argument expected: nodeIds (Array)");
 
   auto opts = info[0].As<v8::Array>();
-
+  
   auto maybeNodeIds = Nan::Get(opts, Nan::New("nodeIds").ToLocalChecked());
 
-  auto nodeIdsOk = !maybeNodeIds.IsEmpty() && maybeNodeIds.ToLocalChecked()->IsArray() && maybeNodeIds->Length() > 1 && maybeNodeIds->Get(0)->IsNumber();
+  auto nodeIdsOk = !maybeNodeIds.IsEmpty() && maybeNodeIds.ToLocalChecked()->IsArray();
 
   if (!nodeIdsOk)
     return Nan::ThrowTypeError("GetAnnotations expects 'nodeIds' (Array(Number))");
 
+  auto temp_nodeIds = v8::Local<v8::Array>::Cast(maybeNodeIds.ToLocalChecked());
+  std::vector<external_nodeid_t> resulting_nodeIds;
+
+  if (temp_nodeIds->Length() < 2)
+    return Nan::ThrowTypeError("GetAnnotations expects 'nodeIds' (Array(Number)) of at least length 2");
+
+  for (uint32_t i = 0; i < temp_nodeIds->Length(); ++i)
+  {
+    v8::Local<v8::Value> temp_nodeId = temp_nodeIds->Get(i);
+
+    if (!temp_nodeId->IsNumber())
+      return Nan::ThrowTypeError("NodeIds must be an array of numbers");
+    
+    // Nan::Maybe<int64_t> Nan::To<int64_t>(temp_nodeId);
+
+    auto nodeId = Nan::To<external_nodeid_t>(temp_nodeId).FromJust();
+    resulting_nodeIds.emplace_back(nodeId);
+  }
+
   // // TODO: put in its own file
-  // struct Worker final : Nan::AsyncWorker {
-  //   using Base = Nan::AsyncWorker;
+  struct Worker final : Nan::AsyncWorker {
+    using Base = Nan::AsyncWorker;
 
-  //   Worker(std::shared_ptr<const CostMatrix> costs_, Nan::Callback* callback, int numNodes, int numVehicles, int vehicleDepot,
-  //          const ort::RoutingModelParameters& modelParams_, const ort::RoutingSearchParameters& searchParams_)
-  //       : Base(callback), costs{std::move(costs_)},
-  //         model(numNodes, numVehicles, ort::RoutingModel::NodeIndex{vehicleDepot}, modelParams_), modelParams(modelParams_),
-  //         searchParams(searchParams_), routes{} {}
+    Worker(std::shared_ptr<const Hashmap> annotations, Nan::Callback* callback, std::vector<external_nodeid_t> nodeIds)
+        : Base(callback), costs{std::move(costs_)},
+          model(numNodes, numVehicles, ort::RoutingModel::NodeIndex{vehicleDepot}, modelParams_), modelParams(modelParams_),
+          searchParams(searchParams_), routes{} {}
 
-  //   void Execute() override {
-  //     struct CostMatrixAdapter {
-  //       int64 operator()(ort::RoutingModel::NodeIndex from, ort::RoutingModel::NodeIndex to) const {
-  //         return costMatrix(from.value(), to.value());
-  //       }
+    void Execute() override {
+      struct CostMatrixAdapter {
+        int64 operator()(ort::RoutingModel::NodeIndex from, ort::RoutingModel::NodeIndex to) const {
+          return costMatrix(from.value(), to.value());
+        }
 
-  //       const CostMatrix& costMatrix;
-  //     } const costAdapter{*costs};
+        const CostMatrix& costMatrix;
+      } const costAdapter{*costs};
 
-  //     const auto costEvaluator = NewPermanentCallback(&costAdapter, &CostMatrixAdapter::operator());
-  //     model.SetArcCostEvaluatorOfAllVehicles(costEvaluator);
+      const auto costEvaluator = NewPermanentCallback(&costAdapter, &CostMatrixAdapter::operator());
+      model.SetArcCostEvaluatorOfAllVehicles(costEvaluator);
 
-  //     const auto* solution = model.SolveWithParameters(searchParams);
+      const auto* solution = model.SolveWithParameters(searchParams);
 
-  //     if (!solution)
-  //       SetErrorMessage("Unable to find a solution");
+      if (!solution)
+        SetErrorMessage("Unable to find a solution");
 
-  //     const auto cost = solution->ObjectiveValue();
-  //     (void)cost; // TODO: use
+      const auto cost = solution->ObjectiveValue();
+      (void)cost; // TODO: use
 
-  //     model.AssignmentToRoutes(*solution, &routes);
-  //   }
+      model.AssignmentToRoutes(*solution, &routes);
+    }
 
-  //   void HandleOKCallback() override {
-  //     Nan::HandleScope scope;
+    void HandleOKCallback() override {
+      Nan::HandleScope scope;
 
-  //     auto jsRoutes = Nan::New<v8::Array>(routes.size());
+      auto jsRoutes = Nan::New<v8::Array>(routes.size());
 
-  //     for (int i = 0; i < routes.size(); ++i) {
-  //       const auto& route = routes[i];
+      for (int i = 0; i < routes.size(); ++i) {
+        const auto& route = routes[i];
 
-  //       auto jsNodes = Nan::New<v8::Array>(route.size());
+        auto jsNodes = Nan::New<v8::Array>(route.size());
 
-  //       for (int j = 0; j < route.size(); ++j)
-  //         (void)Nan::Set(jsNodes, j, Nan::New<v8::Number>(route[j].value()));
+        for (int j = 0; j < route.size(); ++j)
+          (void)Nan::Set(jsNodes, j, Nan::New<v8::Number>(route[j].value()));
 
-  //       (void)Nan::Set(jsRoutes, i, jsNodes);
-  //     }
+        (void)Nan::Set(jsRoutes, i, jsNodes);
+      }
 
-  //     const auto argc = 2u;
-  //     v8::Local<v8::Value> argv[argc] = {Nan::Null(), jsRoutes};
+      const auto argc = 2u;
+      v8::Local<v8::Value> argv[argc] = {Nan::Null(), jsRoutes};
 
-  //     callback->Call(argc, argv);
-  //   }
+      callback->Call(argc, argv);
+    }
 
-  //   std::shared_ptr<const CostMatrix> costs; // inc ref count to keep alive for async cb
+    std::shared_ptr<const CostMatrix> costs; // inc ref count to keep alive for async cb
 
-  //   ort::RoutingModel model;
-  //   ort::RoutingModelParameters modelParams;
-  //   ort::RoutingSearchParameters searchParams;
+    ort::RoutingModel model;
+    ort::RoutingModelParameters modelParams;
+    ort::RoutingSearchParameters searchParams;
 
-  //   std::vector<std::vector<ort::RoutingModel::NodeIndex>> routes;
-  // };
+    std::vector<std::vector<ort::RoutingModel::NodeIndex>> routes;
+  };
 
   // TODO: overflow
-  auto timeLimit = Nan::To<int>(maybeTimeLimit.ToLocalChecked()).FromJust();
-  auto depotNode = Nan::To<int>(maybeDepotNode.ToLocalChecked()).FromJust();
+  // auto nodeIds = Nan::To<int>(nodeIdsOk.ToLocalChecked()).FromJust();
+  // auto depotNode = Nan::To<int>(maybeDepotNode.ToLocalChecked()).FromJust();
 
   // See routing_parameters.proto and routing_enums.proto
-  auto modelParams = ort::RoutingModel::DefaultModelParameters();
-  auto searchParams = ort::RoutingModel::DefaultSearchParameters();
+  // auto modelParams = ort::RoutingModel::DefaultModelParameters();
+  // auto searchParams = ort::RoutingModel::DefaultSearchParameters();
 
-  // TODO: Make configurable from Js?
-  auto firstSolutionStrategy = ort::FirstSolutionStrategy::AUTOMATIC;
-  auto metaHeuristic = ort::LocalSearchMetaheuristic::AUTOMATIC;
+  // // TODO: Make configurable from Js?
+  // auto firstSolutionStrategy = ort::FirstSolutionStrategy::AUTOMATIC;
+  // auto metaHeuristic = ort::LocalSearchMetaheuristic::AUTOMATIC;
 
-  searchParams.set_first_solution_strategy(firstSolutionStrategy);
-  searchParams.set_local_search_metaheuristic(metaHeuristic);
-  searchParams.set_time_limit_ms(timeLimit);
+  // searchParams.set_first_solution_strategy(firstSolutionStrategy);
+  // searchParams.set_local_search_metaheuristic(metaHeuristic);
+  // searchParams.set_time_limit_ms(timeLimit);
 
-  auto* worker = new Worker{self->costs,                 //
-                            new Nan::Callback{callback}, //
-                            numNodes,                    //
-                            numVehicles,                 //
-                            depotNode,                   //
-                            modelParams,                 //
-                            searchParams};               //
+  // auto* worker = new Worker{self->costs,                 //
+  //                           new Nan::Callback{callback}, //
+  //                           numNodes,                    //
+  //                           numVehicles,                 //
+  //                           depotNode,                   //
+  //                           modelParams,                 //
+  //                           searchParams};               //
 
-  Nan::AsyncQueueWorker(worker);
+  // Nan::AsyncQueueWorker(worker);
 }
 
 Nan::Persistent<v8::Function>& Lookup::constructor() {
