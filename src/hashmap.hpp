@@ -38,8 +38,8 @@ namespace std
 class Hashmap {
     public:
         void loadData(std::ifstream& input);
-        void add(external_nodeid_t to, external_nodeid_t from, speed_t speed);
-        speed_t getValue(external_nodeid_t to, external_nodeid_t from);
+        void add(external_nodeid_t to, external_nodeid_t from, congestion_speed_t speed);
+        congestion_speed_t getValue(external_nodeid_t to, external_nodeid_t from);
         bool hasKey(external_nodeid_t to, external_nodeid_t from);
 
     private:
