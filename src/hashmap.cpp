@@ -3,20 +3,9 @@
 
 using spp::sparse_hash_map;
 
-void Hashmap::add(external_nodeid_t to, external_nodeid_t from, congestion_speed_t speed) {
-    Hashmap::annotations[Way(to, from)] = speed;
-};
+Hashmap::Hashmap() {};
 
-bool Hashmap::hasKey(external_nodeid_t to, external_nodeid_t from) const {
-    auto lookup = annotations.find(Way(to,from));
-    if(lookup != annotations.end()) {
-        return true;
-    } else {
-        return false;
-    }
-};
-
-void Hashmap::loadData(std::ifstream& input) {
+Hashmap::Hashmap(std::ifstream& input) {
     std::string line;
     external_nodeid_t to;
     external_nodeid_t from;
@@ -51,6 +40,20 @@ void Hashmap::loadData(std::ifstream& input) {
     }
     input.close();
 };
+
+void Hashmap::add(external_nodeid_t to, external_nodeid_t from, congestion_speed_t speed) {
+    Hashmap::annotations[Way(to, from)] = speed;
+};
+
+bool Hashmap::hasKey(external_nodeid_t to, external_nodeid_t from) const {
+    auto lookup = annotations.find(Way(to,from));
+    if(lookup != annotations.end()) {
+        return true;
+    } else {
+        return false;
+    }
+};
+
 
 congestion_speed_t Hashmap::getValue(external_nodeid_t to, external_nodeid_t from){
     if (!Hashmap::hasKey(to, from)) {

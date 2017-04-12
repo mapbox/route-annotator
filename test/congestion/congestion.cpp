@@ -13,8 +13,7 @@ BOOST_AUTO_TEST_CASE(congestion_test_basic)
 {
     std::ifstream file ("test/congestion/congestion.csv", std::ifstream::in);
 
-    Hashmap hm;
-    hm.loadData(file);
+    Hashmap hm(file);
 
     BOOST_CHECK_EQUAL(hm.getValue(62397298,62523814),20);
     BOOST_CHECK_EQUAL(hm.getValue(62444552,62444554),63);
