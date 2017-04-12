@@ -3,7 +3,7 @@
 
 using spp::sparse_hash_map;
 
-void Hashmap::add(external_nodeid_t to, external_nodeid_t from, speed_t speed) {
+void Hashmap::add(external_nodeid_t to, external_nodeid_t from, congestion_speed_t speed) {
     Hashmap::annotations[Way(to, from)] = speed;
 };
 
@@ -22,7 +22,7 @@ void Hashmap::loadData(std::ifstream& input) {
     std::string line;
     external_nodeid_t to;
     external_nodeid_t from;
-    speed_t speed;
+    congestion_speed_t speed;
     std::string str_to;
     std::string str_from;
     std::string str_speed;
@@ -54,7 +54,7 @@ void Hashmap::loadData(std::ifstream& input) {
     input.close();
 };
 
-speed_t Hashmap::getValue(external_nodeid_t to, external_nodeid_t from){
+congestion_speed_t Hashmap::getValue(external_nodeid_t to, external_nodeid_t from){
 
     if (!Hashmap::hasKey(to, from)) {
         throw std::runtime_error("Way from NodeID " + std::to_string(to) + "to NodeId " + std::to_string(from) + " doesn't exist in the hashmap.");
