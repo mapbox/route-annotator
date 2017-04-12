@@ -28,6 +28,7 @@
       'target_name': 'annotator',
       "type": "static_library",
       'hard_dependency': 1,
+      'dependencies': [ 'action_before_build' ],
       'sources': [
         './src/annotator.cpp',
         './src/database.cpp',
@@ -50,7 +51,7 @@
     },
     {
       'target_name': '<(module_name)',
-      'dependencies': [ 'action_before_build', 'annotator' ],
+      'dependencies': [ 'annotator' ],
       'product_dir': '<(module_path)',
       'sources': [
         './src/nodejs_bindings.cpp'
@@ -93,7 +94,7 @@
     },
     {
       'target_name': 'cxx-tests',
-      'dependencies': [ 'action_before_build', 'annotator' ],
+      'dependencies': [ 'annotator' ],
       'type': 'executable',
       'sources': [
         './test/basic-tests.cpp',
