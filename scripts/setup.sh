@@ -13,6 +13,8 @@ fi
 
 MASON_URL="https://s3.amazonaws.com/mason-binaries/${PLATFORM}-$(uname -m)"
 
+llvm_toolchain_dir="$(pwd)/.toolchain"
+
 function run() {
     local config=${1}
     # unbreak bash shell due to rvm bug on osx: https://github.com/direnv/direnv/issues/210#issuecomment-203383459
@@ -35,18 +37,18 @@ function run() {
     GLOBAL_LLVM="${HOME}/.mason/mason_packages/${PLATFORM}-$(uname -m)/llvm/${MASON_LLVM_RELEASE}"
     if [[ -d ${GLOBAL_LLVM} ]]; then
       echo "Detected '${GLOBAL_LLVM}/bin/clang++', using it"
-      local llvm_toolchain=${GLOBAL_LLVM}
+      local llvm_toolchain_dir=${GLOBAL_LLVM}
     elif [[ -d ${GLOBAL_CLANG} ]]; then
       echo "Detected '${GLOBAL_CLANG}/bin/clang++', using it"
-      local llvm_toolchain=${GLOBAL_CLANG}
-    else
+      local llvm_toolchain_dir=${GLOBAL_CLANG}
+    elif [[ -d ${GLOBAL_CLANG} ]]; then
+      echo "Detected '${GLOBAL_CLANG}/bin/clang++', using it"
+      local llvm_toolchain_dir=${GLOBAL_CLANG}
+    elif [[ ! -d ${llvm_toolchain_dir} ]]; then
       BINARY="${MASON_URL}/clang++/${MASON_LLVM_RELEASE}.tar.gz"
-      echo "Did not detect global clang++ at '${GLOBAL_CLANG}' or ${GLOBAL_LLVM}"
       echo "Downloading ${BINARY}"
-      local clang_install_dir="$(pwd)/.toolchain"
-      mkdir -p ${clang_install_dir}
-      curl -sSfL ${BINARY} | tar --gunzip --extract --strip-components=1 --directory=${clang_install_dir}
-      local llvm_toolchain=${clang_install_dir}
+      mkdir -p ${llvm_toolchain_dir}
+      curl -sSfL ${BINARY} | tar --gunzip --extract --strip-components=1 --directory=${llvm_toolchain_dir}
     fi
 
     #
@@ -68,12 +70,12 @@ function run() {
     # ENV SETTINGS
     #
 
-    echo "export PATH=${llvm_toolchain}/bin:$(pwd)/.mason:$(pwd)/mason_packages/.link/bin:"'${PATH}' > ${config}
-    echo "export CXX=${llvm_toolchain}/bin/clang++" >> ${config}
+    echo "export PATH=${llvm_toolchain_dir}/bin:$(pwd)/.mason:$(pwd)/mason_packages/.link/bin:"'${PATH}' > ${config}
+    echo "export CXX=${llvm_toolchain_dir}/bin/clang++" >> ${config}
     echo "export MASON_RELEASE=${MASON_RELEASE}" >> ${config}
     echo "export MASON_LLVM_RELEASE=${MASON_LLVM_RELEASE}" >> ${config}
     # https://github.com/google/sanitizers/wiki/AddressSanitizerAsDso
-    RT_BASE=${llvm_toolchain}/lib/clang/${MASON_LLVM_RELEASE}/lib/$(uname | tr A-Z a-z)/libclang_rt
+    RT_BASE=${llvm_toolchain_dir}/lib/clang/${MASON_LLVM_RELEASE}/lib/$(uname | tr A-Z a-z)/libclang_rt
     if [[ $(uname -s) == 'Darwin' ]]; then
         RT_PRELOAD=${RT_BASE}.asan_osx_dynamic.dylib
     else
