@@ -1,2 +1,2 @@
 'use strict';
-module.exports = require('node-cmake')('route_annotator');
+module.exports = require('./lib/binding/route_annotator.node');

@@ -7,16 +7,16 @@
     "native",
     "module"
   ],
-  "repository" : { 
-    "type" : "git", 
-    "url" : "https://github.com/mapbox/route-annotator.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mapbox/route-annotator.git"
   },
   "author": "Mapbox",
   "license": "See LICENSE.txt file",
   "main": "index.js",
   "scripts": {
-    "install": "node-pre-gyp install",
-    "cmake": "ncmake --build --config Release -DNODEJS=ON build"
+    "test": "tape test/*.test.js",
+    "install": "node-pre-gyp install --fallback-to-build"
   },
   "devDependencies": {
     "express": "^4.13.4",
@@ -26,11 +26,12 @@
     "aws-sdk": "^2.3.5",
     "nan": "^2.2.1",
     "node-cmake": "^1.2.0",
-    "node-pre-gyp": "^0.6.26"
+    "node-pre-gyp": "^0.6.26",
+    "tape": "^4.6.3"
   },
   "binary": {
     "module_name": "route_annotator",
-    "module_path": "./build/{platform}/{arch}/{configuration}/",
+    "module_path": "./lib/binding/",
     "host": "https://mapbox-node-binary.s3.amazonaws.com",
     "remote_path": "./{name}/v{version}/{configuration}/",
     "package_name": "{node_abi}-{platform}-{arch}.tar.gz"
