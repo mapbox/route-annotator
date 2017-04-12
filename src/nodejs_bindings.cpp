@@ -44,8 +44,8 @@ NAN_METHOD(Annotator::New)
     }
     else
     {
-        auto init = Nan::New(constructor());
-        info.GetReturnValue().Set(init->NewInstance());
+        return Nan::ThrowTypeError(
+            "Cannot call constructor as function, you need to use 'new' keyword");
     }
 }
 
