@@ -46,12 +46,12 @@ npmtest:
 	@echo "Running nodejs tests..."
 	npm test
 
-test-Release: npmtest
+test-release: npmtest
 	@echo "Running CXX tests..."
 	./build/Release/basic-tests
 	./build/Release/congestion-tests
 
-test-Debug: npmtest
+test-debug: npmtest
 	@echo "Running CXX tests..."
 	./build/Debug/basic-tests
 	./build/Debug/congestion-tests
