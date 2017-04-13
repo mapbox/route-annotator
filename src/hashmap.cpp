@@ -5,7 +5,7 @@ using spp::sparse_hash_map;
 
 Hashmap::Hashmap() {};
 
-Hashmap::Hashmap(std::string input_filename) {
+Hashmap::Hashmap(const std::string input_filename) {
     std::ifstream input(input_filename, std::ifstream::in);
 
     std::string line;
@@ -51,7 +51,7 @@ void Hashmap::add(external_nodeid_t to, external_nodeid_t from, congestion_speed
 };
 
 bool Hashmap::hasKey(external_nodeid_t to, external_nodeid_t from) const {
-    auto lookup = annotations.find(Way(to,from));
+    const auto lookup = annotations.find(Way(to,from));
     if(lookup != annotations.end()) {
         return true;
     } else {
@@ -59,16 +59,18 @@ bool Hashmap::hasKey(external_nodeid_t to, external_nodeid_t from) const {
     }
 };
 
-
-congestion_speed_t Hashmap::getValue(external_nodeid_t to, external_nodeid_t from){
+// @TODO use hasKey to get pointer and directly return
+congestion_speed_t Hashmap::getValue(external_nodeid_t to, external_nodeid_t from) const
+{
     if (!Hashmap::hasKey(to, from)) {
         throw std::runtime_error("Way from NodeID " + std::to_string(to) + "to NodeId " + std::to_string(from) + " doesn't exist in the hashmap.");
     }
 
-    return annotations[Way(to, from)];
+    return annotations.at(Way(to, from));
 };
 
-std::vector<congestion_speed_t> Hashmap::getValues(std::vector<external_nodeid_t>& way){
+std::vector<congestion_speed_t> Hashmap::getValues(std::vector<external_nodeid_t>& way) const
+{
     std::vector<congestion_speed_t> speeds;
     if (way.size() > 1)
     {
