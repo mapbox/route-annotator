@@ -55,6 +55,7 @@
       'dependencies': [ 'action_before_build', 'annotator' ],
       'product_dir': '<(module_path)',
       'sources': [
+        './src/main_bindings.cpp',
         './src/nodejs_bindings.cpp',
         './src/lookup_bindings.cpp'
       ],

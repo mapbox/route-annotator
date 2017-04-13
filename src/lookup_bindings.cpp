@@ -2,7 +2,7 @@
 
 
 Lookup::Lookup(Hashmap annotations_) :
-annotations(std::make_shared<const Hashmap>(std::move(annotations_))) {}
+annotations(std::make_shared<Hashmap>(std::move(annotations_))) {}
 
 NAN_MODULE_INIT(Lookup::Init) {
   const auto whoami = Nan::New("Lookup").ToLocalChecked();
@@ -27,19 +27,16 @@ NAN_METHOD(Lookup::New) {
     return;
   }
 
-  if (info.Length() != 1 || !info[0]->IsObject())
+  if (info.Length() != 1 || !info[0]->IsString())
     return Nan::ThrowTypeError("Single object argument expected: Data filename string");
 
-  auto opts = info[0].As<v8::Object>();
+  const Nan::Utf8String utf8String(info[0]);
 
-  auto maybeFilename = Nan::Get(opts, Nan::New("filename").ToLocalChecked());
+  if (!(*utf8String))
+      return Nan::ThrowError("Unable to convert to filename (Utf8String)");
 
-  auto filenameOk = !maybeFilename.IsEmpty() && maybeFilename.ToLocalChecked()->IsString();
+  std::string filename{*utf8String, *utf8String + utf8String.length()};
 
-  if (!filenameOk)
-    return Nan::ThrowTypeError("Lookup expects 'filename' (String)");
-
-  auto filename = *v8::String::Utf8Value(maybeFilename.ToLocalChecked());
   Hashmap annotations(filename);
 
   auto* self = new Lookup(std::move(annotations));
@@ -52,125 +49,59 @@ NAN_METHOD(Lookup::GetAnnotations) {
   auto* const self = Nan::ObjectWrap::Unwrap<Lookup>(info.Holder());
   (void) self;
 
-  if (info.Length() != 1 || !info[0]->IsArray())
-    return Nan::ThrowTypeError("One argument expected: nodeIds (Array)");
+  if (info.Length() != 2 || !info[0]->IsArray())
+    return Nan::ThrowTypeError("Two arguments expected: nodeIds (Array), Callback");
 
-  auto opts = info[0].As<v8::Array>();
-  
-  auto maybeNodeIds = Nan::Get(opts, Nan::New("nodeIds").ToLocalChecked());
+  auto callback = info[1].As<v8::Function>();
+  const auto jsNodeIds = info[0].As<v8::Array>();
+  // Guard against empty or one nodeId for which no wayId can be assigned
+  if (jsNodeIds->Length() < 2)
+      return Nan::ThrowTypeError("GetAnnotations expects 'nodeIds' (Array(Number)) of at least length 2");
 
-  auto nodeIdsOk = !maybeNodeIds.IsEmpty() && maybeNodeIds.ToLocalChecked()->IsArray();
+    std::vector<external_nodeid_t> resulting_nodeIds(jsNodeIds->Length());
 
-  if (!nodeIdsOk)
-    return Nan::ThrowTypeError("GetAnnotations expects 'nodeIds' (Array(Number))");
-
-  auto temp_nodeIds = v8::Local<v8::Array>::Cast(maybeNodeIds.ToLocalChecked());
-  std::vector<external_nodeid_t> resulting_nodeIds;
-
-  if (temp_nodeIds->Length() < 2)
-    return Nan::ThrowTypeError("GetAnnotations expects 'nodeIds' (Array(Number)) of at least length 2");
-
-  for (uint32_t i = 0; i < temp_nodeIds->Length(); ++i)
+  for (uint32_t i = 0; i < jsNodeIds->Length(); ++i)
   {
-    v8::Local<v8::Value> temp_nodeId = temp_nodeIds->Get(i);
-
-    if (!temp_nodeId->IsNumber())
+    v8::Local<v8::Value> jsNodeId = jsNodeIds->Get(i);
+    if (!jsNodeId->IsNumber())
       return Nan::ThrowTypeError("NodeIds must be an array of numbers");
-    
-    // Nan::Maybe<int64_t> Nan::To<int64_t>(temp_nodeId);
-
-    auto nodeId = Nan::To<external_nodeid_t>(temp_nodeId).FromJust();
-    resulting_nodeIds.emplace_back(nodeId);
+    auto nodeId = Nan::To<external_nodeid_t>(jsNodeId).FromJust();
+    resulting_nodeIds[i] = nodeId;
   }
 
-  // // TODO: put in its own file
   struct Worker final : Nan::AsyncWorker {
     using Base = Nan::AsyncWorker;
 
-    Worker(std::shared_ptr<const Hashmap> annotations, Nan::Callback* callback, std::vector<external_nodeid_t> nodeIds)
-        : Base(callback), costs{std::move(costs_)},
-          model(numNodes, numVehicles, ort::RoutingModel::NodeIndex{vehicleDepot}, modelParams_), modelParams(modelParams_),
-          searchParams(searchParams_), routes{} {}
-
+    Worker(std::shared_ptr<Hashmap> annotations, Nan::Callback* callback, std::vector<external_nodeid_t> nodeIds)
+        : Base(callback), annotations{std::move(annotations)}, nodeIds(nodeIds) {}
     void Execute() override {
-      struct CostMatrixAdapter {
-        int64 operator()(ort::RoutingModel::NodeIndex from, ort::RoutingModel::NodeIndex to) const {
-          return costMatrix(from.value(), to.value());
-        }
-
-        const CostMatrix& costMatrix;
-      } const costAdapter{*costs};
-
-      const auto costEvaluator = NewPermanentCallback(&costAdapter, &CostMatrixAdapter::operator());
-      model.SetArcCostEvaluatorOfAllVehicles(costEvaluator);
-
-      const auto* solution = model.SolveWithParameters(searchParams);
-
-      if (!solution)
-        SetErrorMessage("Unable to find a solution");
-
-      const auto cost = solution->ObjectiveValue();
-      (void)cost; // TODO: use
-
-      model.AssignmentToRoutes(*solution, &routes);
+      result_annotations = annotations->getValues(nodeIds);
     }
-
     void HandleOKCallback() override {
       Nan::HandleScope scope;
 
-      auto jsRoutes = Nan::New<v8::Array>(routes.size());
+      auto jsAnnotations = Nan::New<v8::Array>(result_annotations.size());
 
-      for (int i = 0; i < routes.size(); ++i) {
-        const auto& route = routes[i];
-
-        auto jsNodes = Nan::New<v8::Array>(route.size());
-
-        for (int j = 0; j < route.size(); ++j)
-          (void)Nan::Set(jsNodes, j, Nan::New<v8::Number>(route[j].value()));
-
-        (void)Nan::Set(jsRoutes, i, jsNodes);
+      for (std::size_t i = 0; i < result_annotations.size(); ++i) {
+        auto jsAnnotation = Nan::New<v8::Number>(result_annotations[i]);
+        (void)Nan::Set(jsAnnotations, i, jsAnnotation);
       }
 
       const auto argc = 2u;
-      v8::Local<v8::Value> argv[argc] = {Nan::Null(), jsRoutes};
+      v8::Local<v8::Value> argv[argc] = {Nan::Null(), jsAnnotations};
 
       callback->Call(argc, argv);
     }
-
-    std::shared_ptr<const CostMatrix> costs; // inc ref count to keep alive for async cb
-
-    ort::RoutingModel model;
-    ort::RoutingModelParameters modelParams;
-    ort::RoutingSearchParameters searchParams;
-
-    std::vector<std::vector<ort::RoutingModel::NodeIndex>> routes;
+    std::shared_ptr<Hashmap> annotations; // inc ref count to keep alive for async cb
+    std::vector<external_nodeid_t> nodeIds;
+    std::vector<congestion_speed_t> result_annotations;
   };
 
-  // TODO: overflow
-  // auto nodeIds = Nan::To<int>(nodeIdsOk.ToLocalChecked()).FromJust();
-  // auto depotNode = Nan::To<int>(maybeDepotNode.ToLocalChecked()).FromJust();
+  auto* worker = new Worker{self->annotations,
+                            new Nan::Callback{callback},
+                            resulting_nodeIds};
 
-  // See routing_parameters.proto and routing_enums.proto
-  // auto modelParams = ort::RoutingModel::DefaultModelParameters();
-  // auto searchParams = ort::RoutingModel::DefaultSearchParameters();
-
-  // // TODO: Make configurable from Js?
-  // auto firstSolutionStrategy = ort::FirstSolutionStrategy::AUTOMATIC;
-  // auto metaHeuristic = ort::LocalSearchMetaheuristic::AUTOMATIC;
-
-  // searchParams.set_first_solution_strategy(firstSolutionStrategy);
-  // searchParams.set_local_search_metaheuristic(metaHeuristic);
-  // searchParams.set_time_limit_ms(timeLimit);
-
-  // auto* worker = new Worker{self->costs,                 //
-  //                           new Nan::Callback{callback}, //
-  //                           numNodes,                    //
-  //                           numVehicles,                 //
-  //                           depotNode,                   //
-  //                           modelParams,                 //
-  //                           searchParams};               //
-
-  // Nan::AsyncQueueWorker(worker);
+  Nan::AsyncQueueWorker(worker);
 }
 
 Nan::Persistent<v8::Function>& Lookup::constructor() {

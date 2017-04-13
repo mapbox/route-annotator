@@ -18,3 +18,9 @@ test('annotate', function(t) {
     });
 });
 
+const lookup = new bindings.Lookup(path.join(__dirname,'congestion/congestion.csv'));
+lookup.GetAnnotations([62444552,62444554,62444556], (err, resp)=> {
+  // do tests here. expected output = [63, 63]
+  console.log("FUN STARTS HERE");
+  console.log(resp);
+});

@@ -20,7 +20,8 @@ private:
 
   Lookup(Hashmap annotations);
 
-  std::shared_ptr<const Hashmap> annotations; // if you want async call
+  std::shared_ptr<Hashmap> annotations; // if you want async call
 };
+
 
 
