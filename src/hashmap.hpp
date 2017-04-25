@@ -41,7 +41,7 @@ class Hashmap {
     public:
         Hashmap();
         // Hashmap(std::ifstream& input);
-        Hashmap(const std::string input_filename);
+        Hashmap(const std::string &input_filename);
         void add(external_nodeid_t to, external_nodeid_t from, congestion_speed_t speed);
         congestion_speed_t getValue(external_nodeid_t to, external_nodeid_t from) const;
         bool hasKey(external_nodeid_t to, external_nodeid_t from) const;

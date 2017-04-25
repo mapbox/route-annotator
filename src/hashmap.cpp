@@ -3,8 +3,10 @@
 #include <boost/spirit/include/phoenix.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/support_line_pos_iterator.hpp>
+#include <boost/fusion/adapted/std_pair.hpp>
 
 using spp::sparse_hash_map;
+
 
 struct Segment final
 {
@@ -28,7 +30,12 @@ struct SpeedSource final
     unsigned speed;
     double rate;
 };
-
+BOOST_FUSION_ADAPT_STRUCT(Segment,
+                         (decltype(Segment::from), from)
+                         (decltype(Segment::to), to))
+BOOST_FUSION_ADAPT_STRUCT(SpeedSource,
+                          (decltype(SpeedSource::speed), speed)
+                          (decltype(SpeedSource::rate), rate))
 using Iterator = boost::spirit::line_pos_iterator<boost::spirit::istream_iterator>;
 using KeyRule = boost::spirit::qi::rule<Iterator, Segment()>;
 using ValueRule = boost::spirit::qi::rule<Iterator, SpeedSource()>;
