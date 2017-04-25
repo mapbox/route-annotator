@@ -10,56 +10,19 @@ Hashmap::Hashmap(const std::string &input_filename) {
 
     io::CSVReader<3> in(input_filename);
     in.set_header("from", "to", "speed");
-    std::uint64_t from; std::uint64_t to; int speed;
+    external_nodeid_t from; external_nodeid_t to; int speed;
+    // Pre-allocate a large chunk of memory to save on all the micro-allocations
+    // that would happen if adding items one-by-one and growing as needed
+    annotations.reserve(139064548);
     while(in.read_row(from, to, speed)){
         add(to, from, speed);
     }
 
 };
 
-// Hashmap::Hashmap(const std::string input_filename) {
-//     std::ifstream input(input_filename, std::ifstream::in);
-
-//     std::string line;
-//     external_nodeid_t to;
-//     external_nodeid_t from;
-//     congestion_speed_t speed;
-//     std::string str_to;
-//     std::string str_from;
-//     std::string str_speed;
-
-//     if (input)
-//     {
-//         while (getline(input, line))
-//         {
-//             try
-//             {
-//                 std::stringstream iss;
-//                 iss << line;
-//                 std::getline(iss, str_to, ',');
-//                 to = std::stoull(str_to);
-//                 std::getline(iss, str_from, ',');
-//                 from = std::stoull(str_from);
-//                 std::getline(iss, str_speed, ',');
-//                 speed = std::stoull(str_speed);
-
-//                 add(to, from, speed);
-//             }
-//             catch (std::exception& e)
-//             {
-//                 std::cout << "Input input has invalid format." << std::endl;
-//                 std::cout << e.what() << std::endl;
-//             }
-//         }
-//     }
-//     else {
-//         BOOST_ASSERT_MSG(false, 'no inputfile');
-//     }
-//     input.close();
-// };
-
-void Hashmap::add(external_nodeid_t to, external_nodeid_t from, congestion_speed_t speed) {
-    Hashmap::annotations[Way(to, from)] = speed;
+inline void Hashmap::add(const external_nodeid_t &to, const external_nodeid_t &from, const congestion_speed_t &speed) {
+    // Use emplace to avoid making a copy
+    annotations.emplace(std::move(Way(to, from)), speed);
 };
 
 bool Hashmap::hasKey(external_nodeid_t to, external_nodeid_t from) const {
@@ -74,11 +37,14 @@ bool Hashmap::hasKey(external_nodeid_t to, external_nodeid_t from) const {
 // @TODO use hasKey to get pointer and directly return
 congestion_speed_t Hashmap::getValue(external_nodeid_t to, external_nodeid_t from) const
 {
-    if (!Hashmap::hasKey(to, from)) {
+    // Save the result of find so that we don't need to repeat the lookup to get the value
+    auto result = annotations.find(Way(to,from));
+    if (result == annotations.end()) {
         throw std::runtime_error("Way from NodeID " + std::to_string(to) + "to NodeId " + std::to_string(from) + " doesn't exist in the hashmap.");
     }
 
-    return annotations.at(Way(to, from));
+    // Use the already retrieved value as the result
+    return result->second;
 };
 
 std::vector<congestion_speed_t> Hashmap::getValues(std::vector<external_nodeid_t>& way) const

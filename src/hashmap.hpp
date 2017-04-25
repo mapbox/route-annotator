@@ -14,10 +14,10 @@ struct Way
         return to == o.to && from == o.from;
     }
 
-    Way(const int to, const int from) : to(to), from(from) { }
+    Way(const external_nodeid_t to, const external_nodeid_t from) : to(to), from(from) { }
 
-    int to;
-    int from;
+    external_nodeid_t to;
+    external_nodeid_t from;
 };
 
 namespace std
@@ -29,10 +29,13 @@ namespace std
     {
         std::size_t operator()(Way const &p) const
         {
-            std::size_t seed = 0;
-            spp::hash_combine(seed, p.to);
-            spp::hash_combine(seed, p.from);
-            return seed;
+            // As of 2017, we know that OSM node IDs are about 2^32 big.  In a 64bit
+            // value, most of the top bits are zero.
+            // A quick way to come up with a unique ID is to merge two IDs together,
+            // shifting one into the upper empty bits of the other.
+            // This produces few/no collisions, which is good for hashtable/map
+            // performance.
+            return (p.to << 31) + p.from;
         }
     };
 }
@@ -42,7 +45,7 @@ class Hashmap {
         Hashmap();
         // Hashmap(std::ifstream& input);
         Hashmap(const std::string &input_filename);
-        void add(external_nodeid_t to, external_nodeid_t from, congestion_speed_t speed);
+        inline void add(const external_nodeid_t &to, const external_nodeid_t &from, const congestion_speed_t &speed);
         congestion_speed_t getValue(external_nodeid_t to, external_nodeid_t from) const;
         bool hasKey(external_nodeid_t to, external_nodeid_t from) const;
         std::vector<congestion_speed_t> getValues(std::vector<external_nodeid_t>& way) const;
