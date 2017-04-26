@@ -21,13 +21,11 @@ Hashmap::Hashmap(const std::string &input_filename) {
 };
 
 inline void Hashmap::add(const external_nodeid_t &to, const external_nodeid_t &from, const congestion_speed_t &speed) {
-    // Use emplace to avoid making a copy
-    annotations.emplace(std::move(Way(to, from)), speed);
+    annotations[Way(to,from)] = speed;
 };
 
 bool Hashmap::hasKey(external_nodeid_t to, external_nodeid_t from) const {
-    const auto lookup = annotations.find(Way(to,from));
-    if(lookup != annotations.end()) {
+    if (annotations.count(Way(to,from)) > 0) {
         return true;
     } else {
         return false;
