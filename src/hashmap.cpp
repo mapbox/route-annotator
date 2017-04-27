@@ -38,7 +38,7 @@ congestion_speed_t Hashmap::getValue(external_nodeid_t to, external_nodeid_t fro
     // Save the result of find so that we don't need to repeat the lookup to get the value
     auto result = annotations.find(Way(to,from));
     if (result == annotations.end()) {
-        throw std::runtime_error("Way from NodeID " + std::to_string(to) + "to NodeId " + std::to_string(from) + " doesn't exist in the hashmap.");
+        throw std::runtime_error("Way from NodeID " + std::to_string(to) + " to NodeId " + std::to_string(from) + " doesn't exist in the hashmap.");
     }
 
     // Use the already retrieved value as the result

@@ -3,7 +3,6 @@
 #include <sparsepp/spp.h>
 
 #include "types.hpp"
-#include <sparsepp/spp.h>
 
 using spp::sparse_hash_map;
 
@@ -43,11 +42,10 @@ namespace std
 class Hashmap {
     public:
         Hashmap();
-        // Hashmap(std::ifstream& input);
         Hashmap(const std::string &input_filename);
         inline void add(const external_nodeid_t &to, const external_nodeid_t &from, const congestion_speed_t &speed);
-        congestion_speed_t getValue(external_nodeid_t to, external_nodeid_t from) const;
         bool hasKey(external_nodeid_t to, external_nodeid_t from) const;
+        congestion_speed_t getValue(external_nodeid_t to, external_nodeid_t from) const;
         std::vector<congestion_speed_t> getValues(std::vector<external_nodeid_t>& way) const;
 
     private:
