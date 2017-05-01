@@ -18,9 +18,8 @@ test('annotate', function(t) {
     });
 });
 
-
 // TEST AND EXAMPLE CODE TO USE CONGESTION LOOKUP
-const congestionLookup = new bindings.Lookup(path.join(__dirname,'congestion/congestion.csv'));
+const congestionLookup = new bindings.Lookup(path.join(__dirname,'congestion/fixtures/congestion.csv'));
 congestionLookup.GetAnnotations([62444552,62444554,62444556], (err, resp)=> {
   console.log(resp);
 });

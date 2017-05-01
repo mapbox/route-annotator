@@ -1,3 +1,6 @@
+#ifndef HASHMAP_H
+#define HASHMAP_H
+
 #include <fstream>
 #include <iostream>
 #include <sparsepp/spp.h>
@@ -13,10 +16,10 @@ struct Way
         return to == o.to && from == o.from;
     }
 
-    Way(const external_nodeid_t to, const external_nodeid_t from) : to(to), from(from) { }
+    Way(const external_nodeid_t from, const external_nodeid_t to) : from(from), to(to) { }
 
-    external_nodeid_t to;
     external_nodeid_t from;
+    external_nodeid_t to;
 };
 
 namespace std
@@ -43,11 +46,13 @@ class Hashmap {
     public:
         Hashmap();
         Hashmap(const std::string &input_filename);
-        inline void add(const external_nodeid_t &to, const external_nodeid_t &from, const congestion_speed_t &speed);
-        bool hasKey(external_nodeid_t to, external_nodeid_t from) const;
-        congestion_speed_t getValue(external_nodeid_t to, external_nodeid_t from) const;
-        std::vector<congestion_speed_t> getValues(std::vector<external_nodeid_t>& way) const;
+        inline void add(const external_nodeid_t &from, const external_nodeid_t &to, const congestion_speed_t &speed);
+        bool hasKey(external_nodeid_t from, external_nodeid_t to) const;
+        congestion_speed_t getValue(external_nodeid_t from, external_nodeid_t to) const;
+        std::vector<congestion_speed_t> getValues(const std::vector<external_nodeid_t> &way) const;
 
     private:
-        sparse_hash_map<Way, int> annotations;
+        sparse_hash_map<Way, congestion_speed_t> annotations;
 };
+
+#endif

@@ -65,7 +65,11 @@ NAN_METHOD(Lookup::GetAnnotations) {
     v8::Local<v8::Value> jsNodeId = jsNodeIds->Get(i);
     if (!jsNodeId->IsNumber())
       return Nan::ThrowTypeError("NodeIds must be an array of numbers");
-    auto nodeId = Nan::To<external_nodeid_t>(jsNodeId).FromJust();
+    auto signedNodeId = Nan::To<int64_t>(jsNodeId).FromJust();
+    if(signedNodeId < 0)
+      return Nan::ThrowTypeError("GetAnnotations expects 'nodeId' within (Array(Number))to be non-negative");
+    // auto nodeId = Nan::To<external_nodeid_t>(jsNodeId).FromJust();
+    external_nodeid_t nodeId = static_cast<external_nodeid_t>(signedNodeId);
     resulting_nodeIds[i] = nodeId;
   }
 
@@ -73,7 +77,7 @@ NAN_METHOD(Lookup::GetAnnotations) {
     using Base = Nan::AsyncWorker;
 
     Worker(std::shared_ptr<Hashmap> annotations, Nan::Callback* callback, std::vector<external_nodeid_t> nodeIds)
-        : Base(callback), annotations{std::move(annotations)}, nodeIds(nodeIds) {}
+        : Base(callback), annotations{std::move(annotations)}, nodeIds(std::move(nodeIds)) {}
     void Execute() override {
       result_annotations = annotations->getValues(nodeIds);
     }
