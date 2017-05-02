@@ -28,6 +28,14 @@ BOOST_AUTO_TEST_CASE(congestion_test_many)
 	BOOST_CHECK_EQUAL(hm.getValue(86623322,86622998),89);
 	BOOST_CHECK_EQUAL(hm.getValue(86622998,86623322),88);
 	BOOST_CHECK_EQUAL(hm.getValue(86909074,86909072),79);
+
+	std::vector<external_nodeid_t> nodes{86909055, 86909053, 86909050, 86909053, 86909055};
+
+	std::vector<congestion_speed_t> speeds{81, 81, 81, 81};
+
+	std::vector<congestion_speed_t> response = hm.getValues(nodes);
+
+	BOOST_CHECK_EQUAL_COLLECTIONS(response.begin(), response.end(), speeds.begin(), speeds.end());
 }
 
 BOOST_AUTO_TEST_CASE(congestion_test_string_input)
@@ -70,12 +78,20 @@ BOOST_AUTO_TEST_CASE(congestion_test_many_exceptions)
     Hashmap hm("test/congestion/fixtures/congestion.csv");
 
 	BOOST_CHECK_THROW(hm.getValue(86909050,86900053), std::exception);
-	BOOST_CHECK_THROW(hm.getValue(86901053,86900050), std::exception);
+	BOOST_CHECK_THROW(hm.getValue(86900053,86900050), std::exception);
 	BOOST_CHECK_THROW(hm.getValue(86903150,86900053), std::exception);
 	BOOST_CHECK_THROW(hm.getValue(86909253,86900055), std::exception);
 	BOOST_CHECK_THROW(hm.getValue(86623122,86620998), std::exception);
 	BOOST_CHECK_THROW(hm.getValue(86600998,86620322), std::exception);
 	BOOST_CHECK_THROW(hm.getValue(86900074,86900072), std::exception);
+
+	std::vector<external_nodeid_t> nodes{86909050, 86900053, 86900050};
+
+	std::vector<congestion_speed_t> speeds{INVALID_SPEED, INVALID_SPEED};
+
+	std::vector<congestion_speed_t> response = hm.getValues(nodes);
+
+	BOOST_CHECK_EQUAL_COLLECTIONS(response.begin(), response.end(), speeds.begin(), speeds.end());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

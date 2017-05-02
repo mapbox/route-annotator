@@ -47,7 +47,6 @@ NAN_METHOD(Lookup::New) {
 
 NAN_METHOD(Lookup::GetAnnotations) {
   auto* const self = Nan::ObjectWrap::Unwrap<Lookup>(info.Holder());
-  (void) self;
 
   if (info.Length() != 2 || !info[0]->IsArray())
     return Nan::ThrowTypeError("Two arguments expected: nodeIds (Array), Callback");
@@ -68,7 +67,7 @@ NAN_METHOD(Lookup::GetAnnotations) {
     auto signedNodeId = Nan::To<int64_t>(jsNodeId).FromJust();
     if(signedNodeId < 0)
       return Nan::ThrowTypeError("GetAnnotations expects 'nodeId' within (Array(Number))to be non-negative");
-    // auto nodeId = Nan::To<external_nodeid_t>(jsNodeId).FromJust();
+
     external_nodeid_t nodeId = static_cast<external_nodeid_t>(signedNodeId);
     resulting_nodeIds[i] = nodeId;
   }

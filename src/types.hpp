@@ -12,7 +12,7 @@ typedef std::uint32_t internal_nodeid_t;
 typedef std::uint32_t wayid_t;
 typedef std::uint32_t congestion_speed_t;
 
-static constexpr congestion_speed_t INVALID_SPEED = std::numeric_limits<congestion_speed_t>::max();;
+static constexpr congestion_speed_t INVALID_SPEED = std::numeric_limits<congestion_speed_t>::max();
 
 static constexpr internal_nodeid_t INVALID_INTERNAL_NODEID =
     std::numeric_limits<internal_nodeid_t>::max();

@@ -1,5 +1,5 @@
-#ifndef HASHMAP_H
-#define HASHMAP_H
+#ifndef ROUTE_ANNOTATOR_HASHMAP_H
+#define ROUTE_ANNOTATOR_HASHMAP_H
 
 #include <fstream>
 #include <iostream>
@@ -47,8 +47,8 @@ class Hashmap {
         Hashmap();
         Hashmap(const std::string &input_filename);
         inline void add(const external_nodeid_t &from, const external_nodeid_t &to, const congestion_speed_t &speed);
-        bool hasKey(external_nodeid_t from, external_nodeid_t to) const;
-        congestion_speed_t getValue(external_nodeid_t from, external_nodeid_t to) const;
+        bool hasKey(const external_nodeid_t &from, const external_nodeid_t &to) const;
+        congestion_speed_t getValue(const external_nodeid_t &from, const external_nodeid_t &to) const;
         std::vector<congestion_speed_t> getValues(const std::vector<external_nodeid_t> &way) const;
 
     private:

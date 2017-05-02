@@ -13,6 +13,7 @@ Hashmap::Hashmap(const std::string &input_filename) {
     external_nodeid_t from; external_nodeid_t to; congestion_speed_t speed;
     // Pre-allocate a large chunk of memory to save on all the micro-allocations
     // that would happen if adding items one-by-one and growing as needed
+    // This is the size of the wholeworld.csv file that contains all of the freeflow data currently (as of May 2, 2017)
     annotations.reserve(139064548);
     while(in.read_row(from, to, speed)){
         add(from, to, speed);
@@ -20,23 +21,18 @@ Hashmap::Hashmap(const std::string &input_filename) {
 
 };
 
-inline void Hashmap::add(const external_nodeid_t &from, const external_nodeid_t &to, const congestion_speed_t &speed) {
+void Hashmap::add(const external_nodeid_t &from, const external_nodeid_t &to, const congestion_speed_t &speed) {
     annotations[Way(from,to)] = speed;
 };
 
-bool Hashmap::hasKey(external_nodeid_t from, external_nodeid_t to) const {
-    if (annotations.count(Way(from,to)) > 0) {
-        return true;
-    } else {
-        return false;
-    }
+bool Hashmap::hasKey(const external_nodeid_t &from, const external_nodeid_t &to) const {
+    return annotations.count(Way(from,to)) > 0;
 };
 
-// @TODO use hasKey to get pointer and directly return
-congestion_speed_t Hashmap::getValue(external_nodeid_t from, external_nodeid_t to) const
+congestion_speed_t Hashmap::getValue(const external_nodeid_t &from, const external_nodeid_t &to) const
 {
     // Save the result of find so that we don't need to repeat the lookup to get the value
-    auto result = annotations.find(Way(from,to));
+    auto result = annotations.find(Way(from, to));
     if (result == annotations.end()) {
         throw std::runtime_error("Way from NodeID " + std::to_string(from) + " to NodeId " + std::to_string(to) + " doesn't exist in the hashmap.");
     }
@@ -48,6 +44,10 @@ congestion_speed_t Hashmap::getValue(external_nodeid_t from, external_nodeid_t t
 std::vector<congestion_speed_t> Hashmap::getValues(const std::vector<external_nodeid_t> &way) const
 {
     std::vector<congestion_speed_t> speeds;
+    if (way.size() < 2) {
+        throw std::runtime_error("NodeID Array should have more than 2 NodeIds for getValues methodr.");
+    }
+
     if (way.size() > 1)
     {
         speeds.resize(way.size() - 1);
@@ -62,7 +62,6 @@ std::vector<congestion_speed_t> Hashmap::getValues(const std::vector<external_no
                 speeds[node_id] = INVALID_SPEED;
             }
         }
-
     }
     return speeds;
 };
