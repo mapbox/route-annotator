@@ -4,24 +4,21 @@
 
 #include "hashmap.hpp"
 
+class Lookup : public Nan::ObjectWrap
+{
+  public:
+    static NAN_MODULE_INIT(Init);
 
-class Lookup : public Nan::ObjectWrap {
-public:
-  static NAN_MODULE_INIT(Init);
+  private:
+    static NAN_METHOD(New);
 
-private:
-  static NAN_METHOD(New);
+    static NAN_METHOD(GetAnnotations);
 
-  static NAN_METHOD(GetAnnotations);
+    static Nan::Persistent<v8::Function> &constructor(); // CPP Land
 
-  static Nan::Persistent<v8::Function>& constructor(); //CPP Land
+    // Wrapped Object
 
-  // Wrapped Object
+    Lookup(Hashmap annotations);
 
-  Lookup(Hashmap annotations);
-
-  std::shared_ptr<Hashmap> annotations; // if you want async call
+    std::shared_ptr<Hashmap> annotations; // if you want async call
 };
-
-
-

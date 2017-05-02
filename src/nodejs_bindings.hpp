@@ -37,4 +37,3 @@ class Annotator final : public Nan::ObjectWrap
     std::unique_ptr<Database> database;
     std::unique_ptr<RouteAnnotator> annotator;
 };
-
