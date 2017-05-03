@@ -7,8 +7,7 @@
       # cflags (linux) and xcode (mac)
       'system_includes': [
         "-isystem <(module_root_dir)/<!(node -e \"require('nan')\")",
-        '-isystem <(module_root_dir)/mason_packages/.link/include/',
-        '-isystem <(module_root_dir)/third_party/sparsepp/'
+        '-isystem <(module_root_dir)/mason_packages/.link/include/'
       ]
   },
   'targets': [
