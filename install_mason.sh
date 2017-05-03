@@ -21,3 +21,4 @@ install protozero 1.5.1
 install utfcpp 2.3.4
 install zlib 1.2.8
 install sparsepp 0.95
+install clang-format 3.8.1
