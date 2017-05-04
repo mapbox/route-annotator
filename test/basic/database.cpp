@@ -17,12 +17,12 @@ BOOST_AUTO_TEST_CASE(database_string_test)
     // point_t a{1, 1};
     const auto id = db.addstring("test");
     db.compact();
-    BOOST_CHECK_EQUAL(db.getstring(id),"test");
-    BOOST_CHECK_EQUAL(id,0);
+    BOOST_CHECK_EQUAL(db.getstring(id), "test");
+    BOOST_CHECK_EQUAL(id, 0);
 
     // Disabling this test - there are no external inputs here,
     // so we disable range checking for performance.
-    //BOOST_CHECK_THROW(db.getstring(id+1),std::out_of_range);
+    // BOOST_CHECK_THROW(db.getstring(id+1),std::out_of_range);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

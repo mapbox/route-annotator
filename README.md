@@ -24,12 +24,22 @@ make
 
 ## Testing
 
-Run: `npm test`
-
-To run the C++ standalone tests run:
+To run the tests (which run both the JS tests and the C++ tests):
 
 ```
-./build/Release/cxx-tests
+make test
+```
+
+To run just the JS tests:
+
+```
+npm test
+```
+
+To run the C++ tests:
+
+```
+./build/Release/basic-tests
 ```
 
 ### Example

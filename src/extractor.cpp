@@ -56,7 +56,11 @@ Extractor::Extractor(const std::string &osmfilename, Database &db) : db(db)
     db.dump();
 }
 
-Extractor::Extractor(const char * buffer, std::size_t buffersize, const std::string &format, Database &db) : db(db)
+Extractor::Extractor(const char *buffer,
+                     std::size_t buffersize,
+                     const std::string &format,
+                     Database &db)
+    : db(db)
 {
     std::cerr << "Parsing OSM buffer in format " << format << " ... " << std::flush;
     osmium::io::File osmfile{buffer, buffersize, format};
@@ -81,7 +85,6 @@ Extractor::Extractor(const char * buffer, std::size_t buffersize, const std::str
     std::cerr << "done\n" << std::flush;
     db.dump();
 }
-
 
 void Extractor::way(const osmium::Way &way)
 {

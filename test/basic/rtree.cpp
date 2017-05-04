@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(rtree_radius_test)
     BOOST_CHECK_EQUAL(results[0], INVALID_INTERNAL_NODEID);
 
     // This should be within about 1.1m
-    points = std::vector<point_t>{point_t{1.00001, 1}};
+    points = std::vector<point_t>{point_t{1.00005, 1}};
     results = annotator.coordinates_to_internal(points);
     BOOST_CHECK_EQUAL(results.size(), 1);
     BOOST_CHECK_EQUAL(results[0], INVALID_INTERNAL_NODEID);
