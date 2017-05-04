@@ -102,15 +102,4 @@ BOOST_AUTO_TEST_CASE(congestion_test_get_values_exceptions)
     BOOST_CHECK_EQUAL_COLLECTIONS(response.begin(), response.end(), speeds.begin(), speeds.end());
 }
 
-BOOST_AUTO_TEST_CASE(perf)
-{
-    Hashmap hm("wholeworld.csv");
-    BOOST_CHECK_EQUAL(hm.getValue(420432188,65646525),91);
-}
-
-BOOST_AUTO_TEST_CASE(perf2)
-{
-    Hashmap hm("a.csv");
-}
-
 BOOST_AUTO_TEST_SUITE_END()
