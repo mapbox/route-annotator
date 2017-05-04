@@ -108,4 +108,9 @@ BOOST_AUTO_TEST_CASE(perf)
     BOOST_CHECK_EQUAL(hm.getValue(420432188,65646525),91);
 }
 
+BOOST_AUTO_TEST_CASE(perf2)
+{
+    Hashmap hm("a.csv");
+}
+
 BOOST_AUTO_TEST_SUITE_END()

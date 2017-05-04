@@ -14,6 +14,7 @@ source local.env
 
 install boost 1.63.0
 install boost_libtest 1.63.0
+install boost_libiostreams 1.63.0
 install libosmium 2.12.0
 install expat 2.2.0
 install bzip2 1.0.6

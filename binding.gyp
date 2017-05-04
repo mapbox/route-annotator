@@ -120,6 +120,7 @@
         '<(module_root_dir)/mason_packages/.link/lib/libbz2.a',
         '<(module_root_dir)/mason_packages/.link/lib/libexpat.a',
         '<(module_root_dir)/mason_packages/.link/lib/libboost_unit_test_framework.a',
+        '<(module_root_dir)/mason_packages/.link/lib/libboost_iostreams.a',
         # we link to zlib here to fix this error: ../src/extractor.cpp:(.text._ZN6osmium2io16GzipDecompressor4readEv[_ZN6osmium2io16GzipDecompressor4readEv]+0x46): undefined reference to `gzoffset64'
         # because osmium needs a custom zlib that is different that what is statically linked inside node and available on default ubuntu (which don't have gzoffset64`
         '<(module_root_dir)/mason_packages/.link/lib/libz.a'
@@ -168,8 +169,10 @@
         '<(module_root_dir)/mason_packages/.link/lib/libbz2.a',
         '<(module_root_dir)/mason_packages/.link/lib/libexpat.a',
         '<(module_root_dir)/mason_packages/.link/lib/libboost_unit_test_framework.a',
+        '<(module_root_dir)/mason_packages/.link/lib/libboost_iostreams.a',
         # we link to zlib here to fix this error: ../src/extractor.cpp:(.text._ZN6osmium2io16GzipDecompressor4readEv[_ZN6osmium2io16GzipDecompressor4readEv]+0x46): undefined reference to `gzoffset64'
         # because osmium needs a custom zlib that is different that what is statically linked inside node and available on default ubuntu (which don't have gzoffset64`
+        '<(module_root_dir)/mason_packages/.link/lib/libz.a',
         '<(module_root_dir)/mason_packages/.link/lib/libz.a'
       ],
       'cflags': [
