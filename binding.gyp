@@ -60,9 +60,9 @@
       ],
       'conditions': [
         ['error_on_warnings == "true"', {
-            'cflags_cc' : [ '-Werror' ],
+            'cflags_cc' : [  ],
             'xcode_settings': {
-              'OTHER_CPLUSPLUSFLAGS': [ '-Werror' ]
+              'OTHER_CPLUSPLUSFLAGS': [  ]
             }
         }]
       ],
@@ -110,9 +110,9 @@
       ],
       'conditions': [
         ['error_on_warnings == "true"', {
-            'cflags_cc' : [ '-Werror' ],
+            'cflags_cc' : [  ],
             'xcode_settings': {
-              'OTHER_CPLUSPLUSFLAGS': [ '-Werror' ]
+              'OTHER_CPLUSPLUSFLAGS': [  ]
             }
         }]
       ],
@@ -158,9 +158,9 @@
       ],
       'conditions': [
         ['error_on_warnings == "true"', {
-            'cflags_cc' : [ '-Werror' ],
+            'cflags_cc' : [  ],
             'xcode_settings': {
-              'OTHER_CPLUSPLUSFLAGS': [ '-Werror' ]
+              'OTHER_CPLUSPLUSFLAGS': [  ]
             }
         }]
       ],
