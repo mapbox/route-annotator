@@ -12,13 +12,11 @@ class Lookup : public Nan::ObjectWrap
   private:
     static NAN_METHOD(New);
 
+    static NAN_METHOD(loadCSV);
+
     static NAN_METHOD(GetAnnotations);
 
     static Nan::Persistent<v8::Function> &constructor(); // CPP Land
 
-    // Wrapped Object
-
-    Lookup(Hashmap annotations);
-
-    std::shared_ptr<Hashmap> annotations; // if you want async call
+    std::unique_ptr<Hashmap> datamap; // if you want async call
 };

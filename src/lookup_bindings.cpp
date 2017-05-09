@@ -1,10 +1,5 @@
 #include "lookup_bindings.hpp"
 
-Lookup::Lookup(Hashmap annotations_)
-    : annotations(std::make_shared<Hashmap>(std::move(annotations_)))
-{
-}
-
 NAN_MODULE_INIT(Lookup::Init)
 {
     const auto whoami = Nan::New("Lookup").ToLocalChecked();
@@ -13,6 +8,7 @@ NAN_MODULE_INIT(Lookup::Init)
     fnTp->SetClassName(whoami);
     fnTp->InstanceTemplate()->SetInternalFieldCount(1);
 
+    SetPrototypeMethod(fnTp, "loadCSV", loadCSV);
     SetPrototypeMethod(fnTp, "GetAnnotations", GetAnnotations);
 
     const auto fn = Nan::GetFunction(fnTp).ToLocalChecked();
@@ -23,6 +19,21 @@ NAN_MODULE_INIT(Lookup::Init)
 
 NAN_METHOD(Lookup::New)
 {
+    if (info.Length() != 0)
+        return Nan::ThrowTypeError("No types expected");
+
+    if (info.IsConstructCall())
+    {
+        auto *const self = new Lookup;
+        self->Wrap(info.This());
+        info.GetReturnValue().Set(info.This());
+    }
+    else
+    {
+        return Nan::ThrowTypeError(
+            "Cannot call constructor as function, you need to use 'new' keyword");
+    }
+
     // Handle `new T()` as well as `T()`
     if (!info.IsConstructCall())
     {
@@ -30,23 +41,58 @@ NAN_METHOD(Lookup::New)
         info.GetReturnValue().Set(init->NewInstance());
         return;
     }
+}
 
-    if (info.Length() != 1 || !info[0]->IsString())
-        return Nan::ThrowTypeError("Single object argument expected: Data filename string");
+NAN_METHOD(Lookup::loadCSV)
+{
+    // In case we already loaded a dataset, this function will transactionally swap in a new one
+    auto *const self = Nan::ObjectWrap::Unwrap<Lookup>(info.Holder());
+
+    if (info.Length() != 2 || !info[0]->IsString() || !info[1]->IsFunction())
+        return Nan::ThrowTypeError("String and callback expected");
 
     const Nan::Utf8String utf8String(info[0]);
 
     if (!(*utf8String))
-        return Nan::ThrowError("Unable to convert to filename (Utf8String)");
+        return Nan::ThrowError("Unable to convert to Utf8String");
 
-    std::string filename{*utf8String, *utf8String + utf8String.length()};
+    std::string path{*utf8String, *utf8String + utf8String.length()};
 
-    Hashmap annotations(filename);
+    struct CSVLoader final : Nan::AsyncWorker
+    {
+        explicit CSVLoader(Lookup &self_, Nan::Callback *callback, std::string path_)
+            : Nan::AsyncWorker(callback), self{self_}, path{std::move(path_)}
+        {
+        }
 
-    auto *self = new Lookup(std::move(annotations));
+        void Execute() override
+        {
+            try
+            {
+                auto tmpmap = std::make_unique<Hashmap>(path);
 
-    self->Wrap(info.This());
-    info.GetReturnValue().Set(info.This());
+                swap(self.datamap, tmpmap);
+            }
+            catch (const std::exception &e)
+            {
+                return SetErrorMessage(e.what());
+            }
+        }
+
+        void HandleOKCallback() override
+        {
+            Nan::HandleScope scope;
+            const constexpr auto argc = 1u;
+            v8::Local<v8::Value> argv[argc] = {Nan::Null()};
+            callback->Call(argc, argv);
+        }
+
+        Lookup &self;
+        std::string path;
+    };
+
+    auto *callback = new Nan::Callback{info[1].As<v8::Function>()};
+    Nan::AsyncQueueWorker(new CSVLoader{*self, callback, std::move(path)});
 }
 
 NAN_METHOD(Lookup::GetAnnotations)
@@ -63,7 +109,7 @@ NAN_METHOD(Lookup::GetAnnotations)
         return Nan::ThrowTypeError(
             "GetAnnotations expects 'nodeIds' (Array(Number)) of at least length 2");
 
-    std::vector<external_nodeid_t> resulting_nodeIds(jsNodeIds->Length());
+    std::vector<external_nodeid_t> nodes_to_query(jsNodeIds->Length());
 
     for (uint32_t i = 0; i < jsNodeIds->Length(); ++i)
     {
@@ -76,20 +122,20 @@ NAN_METHOD(Lookup::GetAnnotations)
                 "GetAnnotations expects 'nodeId' within (Array(Number))to be non-negative");
 
         external_nodeid_t nodeId = static_cast<external_nodeid_t>(signedNodeId);
-        resulting_nodeIds[i] = nodeId;
+        nodes_to_query[i] = nodeId;
     }
 
     struct Worker final : Nan::AsyncWorker
     {
         using Base = Nan::AsyncWorker;
 
-        Worker(std::shared_ptr<Hashmap> annotations,
+        Worker(Lookup &self_,
                Nan::Callback *callback,
                std::vector<external_nodeid_t> nodeIds)
-            : Base(callback), annotations{std::move(annotations)}, nodeIds(std::move(nodeIds))
+            : Base(callback), self{self_}, nodeIds(std::move(nodeIds))
         {
         }
-        void Execute() override { result_annotations = annotations->getValues(nodeIds); }
+        void Execute() override { result_annotations = self.datamap->getValues(nodeIds); }
         void HandleOKCallback() override
         {
             Nan::HandleScope scope;
@@ -107,14 +153,13 @@ NAN_METHOD(Lookup::GetAnnotations)
 
             callback->Call(argc, argv);
         }
-        std::shared_ptr<Hashmap> annotations; // inc ref count to keep alive for async cb
+
+        Lookup &self;
         std::vector<external_nodeid_t> nodeIds;
         std::vector<congestion_speed_t> result_annotations;
     };
 
-    auto *worker = new Worker{self->annotations, new Nan::Callback{callback}, resulting_nodeIds};
-
-    Nan::AsyncQueueWorker(worker);
+    Nan::AsyncQueueWorker(new Worker{*self, new Nan::Callback{callback}, std::move(nodes_to_query)});
 }
 
 Nan::Persistent<v8::Function> &Lookup::constructor()
