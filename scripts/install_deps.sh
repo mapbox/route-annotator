@@ -12,11 +12,13 @@ function install() {
 ./scripts/setup.sh --config local.env
 source local.env
 
-install boost 1.63.0
-install boost_libtest 1.63.0
-install libosmium 2.12.0
-install expat 2.2.0
-install bzip2 1.0.6
-install protozero 1.5.1
-install utfcpp 2.3.4
-install zlib 1.2.8
+if [ ! -d ./mason_packages/.link ]; then
+    install boost 1.63.0
+    install boost_libtest 1.63.0
+    install libosmium 2.12.0
+    install expat 2.2.0
+    install bzip2 1.0.6
+    install protozero 1.5.1
+    install utfcpp 2.3.4
+    install zlib 1.2.8
+fi

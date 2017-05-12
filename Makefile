@@ -1,8 +1,5 @@
 MODULE_NAME := $(shell node -e "console.log(require('./package.json').binary.module_name)")
 
-# Whether to turn compiler warnings into errors
-export WERROR ?= true
-
 default: release
 
 node_modules:
@@ -11,11 +8,11 @@ node_modules:
 	npm install --ignore-scripts
 
 release: node_modules
-	V=1 ./node_modules/.bin/node-pre-gyp configure build --error_on_warnings=$(WERROR) --loglevel=error
+	V=1 ./node_modules/.bin/node-pre-gyp configure build --loglevel=error
 	@echo "run 'make clean' for full rebuild"
 
 debug: node_modules
-	V=1 ./node_modules/.bin/node-pre-gyp configure build --error_on_warnings=$(WERROR) --loglevel=error --debug
+	V=1 ./node_modules/.bin/node-pre-gyp configure build --loglevel=error --debug
 	@echo "run 'make clean' for full rebuild"
 
 coverage:
@@ -24,11 +21,12 @@ coverage:
 clean:
 	rm -rf lib/binding
 	rm -rf build
-	@echo "run 'make distclean' to also clear node_modules and mason_packages"
+	@echo "run 'make distclean' to also clear node_modules, mason_packages, and .mason directories"
 
 distclean: clean
 	rm -rf node_modules
 	rm -rf mason_packages
+	rm -rf .mason
 
 xcode: node_modules
 	./node_modules/.bin/node-pre-gyp configure -- -f xcode
@@ -42,7 +40,20 @@ xcode: node_modules
 docs:
 	npm run docs
 
-test:
+npmtest:
+	@echo "Running nodejs tests..."
 	npm test
+
+test-release: release npmtest
+	@echo "Running CXX tests..."
+	./build/Release/basic-tests -x
+	./build/Release/congestion-tests -x
+
+test-debug: debug npmtest
+	@echo "Running CXX tests..."
+	./build/Debug/basic-tests
+	./build/Debug/congestion-tests
+
+test: test-release
 
 .PHONY: test docs
