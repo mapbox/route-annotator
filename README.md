@@ -52,7 +52,7 @@ The `Annotator()` object is for looking up OSM tag data from OSM node IDs or coo
 
 **Example:**
 ```
-var taglookup = new require('route_annotator').Annotator();
+var taglookup = new (require('route_annotator')).Annotator();
 
 // Lookup some nodes and find out which ways they were on,
 // and what tags they had
@@ -92,7 +92,7 @@ The `SpeedLookup()` object is for loading segment speed information from CSV fil
 
 **Example:**
 ```
-var speedlookup = new require('route_annotator').SpeedLookup();
+var speedlookup = new (require('route_annotator')).SpeedLookup();
 
 // Loads example.csv, then looks up the pairs 123-124, 124-125, 125-126
 // and prints the speeds for those segments (3 values) as comma-separated
@@ -105,6 +105,8 @@ speedlookup.loadCSV("example.csv", (err) => {
   });
 });
 ```
+
+The `loadCSV` method can also be passed an array of filenames.
 
 ---
 
