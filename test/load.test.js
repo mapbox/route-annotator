@@ -2,7 +2,7 @@ var test = require('tape');
 const bindings = require('../index');
 const annotator = new bindings.Annotator();
 const segmentmap = new bindings.SpeedLookup();
-var path = require('path');
+const path = require('path');
 
 test('load extract', function(t) {
   annotator.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
@@ -48,6 +48,7 @@ test('initialization failure with parameters', function(t) {
   t.throws(function() { var foo = new bindings.SpeedLookup("test"); }, /No types expected/, "Check that lookup can't be constructed with parameters");
   t.end();
 });
+
 
 test('check CSV loading', function(t) {
   t.throws(function(cb) { 
@@ -106,6 +107,24 @@ test('lookup node pair from second file', function(t) {
   segmentmap.getRouteSpeeds([90,91,92,93], (err, resp)=> {
     if (err) { console.log(err); throw err; }
     t.same(resp, [2,3,4], "Verify expected speed results");
+    t.end();
+  });
+});
+
+test('make sure that it works even if CSV is not loaded', function(t) {
+  var speedlookup = new bindings.SpeedLookup();
+  speedlookup.getRouteSpeeds([90,91,92,93], (err, resp)=> {
+    if (err) { console.log(err); throw err; }
+    t.ok(resp, "Return results even if CSV is not loaded");
+    t.end();
+  });
+});
+
+test('dont load CSV and see if you get the correct response (4 INVALID_SPEEDs)', function(t) {
+  var speedlookup = new bindings.SpeedLookup();
+  speedlookup.getRouteSpeeds([90,91,92,93], (err, resp)=> {
+    if (err) { console.log(err); throw err; }
+    t.same(resp, [ 4294967295, 4294967295, 4294967295 ], "Verify expected speed results");
     t.end();
   });
 });
