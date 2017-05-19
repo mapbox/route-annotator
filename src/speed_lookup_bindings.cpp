@@ -1,4 +1,6 @@
 #include "speed_lookup_bindings.hpp"
+#include "types.hpp"
+#include <algorithm>
 #include <vector>
 
 NAN_MODULE_INIT(SpeedLookup::Init)
@@ -177,7 +179,20 @@ NAN_METHOD(SpeedLookup::getRouteSpeeds)
             : Base(callback), datamap{datamap_}, nodeIds(std::move(nodeIds))
         {
         }
-        void Execute() override { result_annotations = datamap->getValues(nodeIds); }
+
+        void Execute() override
+        {
+            if (datamap)
+            {
+                result_annotations = datamap->getValues(nodeIds);
+            }
+            else
+            {
+                result_annotations.resize(nodeIds.size() - 1);
+                std::fill(result_annotations.begin(), result_annotations.end(), INVALID_SPEED);
+            }
+        }
+
         void HandleOKCallback() override
         {
             Nan::HandleScope scope;

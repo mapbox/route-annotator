@@ -80,7 +80,7 @@ SegmentSpeedMap::getValues(const std::vector<external_nodeid_t> &route) const
     if (route.size() < 2)
     {
         throw std::runtime_error(
-            "NodeID Array should have more than 2 NodeIds for getValues methodr.");
+            "NodeID Array should have more than 2 NodeIds for getValues method.");
     }
 
     speeds.resize(route.size() - 1);
