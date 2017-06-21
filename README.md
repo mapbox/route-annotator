@@ -123,3 +123,13 @@ Then, in a new terminal, you should be able to do:
 ```
 curl "http://localhost:5000/coordlist/7.422155,43.7368838;7.4230139,43.7369751"
 ```
+
+#### Release
+
+- `git checkout master`
+- Update CHANGELOG.md
+- Bump version in package.json
+- `git commit -am "vx.y.z [publish binary]"` with Changelog list in commit message
+- `git tag vx.y.z -a` with Changelog list in tag message
+- `git push origin master; git push origin --tags`
+- `npm publish`
