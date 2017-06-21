@@ -1,5 +1,8 @@
 # Route Annotator releases
 
+## 0.0.5
+ - Removed large unecessary test fixture from published npm module
+
 ## 0.0.4
  - Fixed bug of segfaulting if using the hashmap without loading CSVs first
 
