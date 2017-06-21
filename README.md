@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/mapbox/route-annotator.svg?branch=master)](https://travis-ci.org/mapbox/route-annotator)
+
 # Route Annotator
 
 This is a NodeJS module that indexes connected node pairs in OSM data, and allows you to query for
