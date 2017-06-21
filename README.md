@@ -110,7 +110,7 @@ The `loadCSV` method can also be passed an array of filenames.
 
 ---
 
-## Example HTTP server
+### Example HTTP server
 
 ```
 npm install
@@ -123,13 +123,15 @@ Then, in a new terminal, you should be able to do:
 ```
 curl "http://localhost:5000/coordlist/7.422155,43.7368838;7.4230139,43.7369751"
 ```
+---
 
-#### Release
+### Release
 
 - `git checkout master`
 - Update CHANGELOG.md
 - Bump version in package.json
 - `git commit -am "vx.y.z [publish binary]"` with Changelog list in commit message
+- Wait for Travis to finish publishing binaries so that all travis tests pass for the publish binary commit.
 - `git tag vx.y.z -a` with Changelog list in tag message
 - `git push origin master; git push origin --tags`
 - `npm publish`
