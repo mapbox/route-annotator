@@ -37,6 +37,8 @@ function publish() {
 
   if [[ $(is_pr_merge) ]]; then
       echo "Skipping publishing because this is a PR merge commit"
+  elif [[ -n "${TOOLSET:-}" ]]; then
+      echo "Skipping publishing since TOOLSET is set"
   else
       echo "Commit message: ${COMMIT_MESSAGE}"
 
