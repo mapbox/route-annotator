@@ -88,8 +88,6 @@ matrix:
         - export ASAN_OPTIONS=fast_unwind_on_malloc=0:${ASAN_OPTIONS}
         - npm test
         - unset LD_PRELOAD
-        # after successful tests, publish binaries if specified in commit message
-        - ./scripts/publish.sh --toolset=${TOOLSET:-} --debug=$([ "${BUILDTYPE}" == 'debug' ] && echo "true" || echo "false")
     # g++ build (default builds all use clang++)
     - os: linux
       env: BUILDTYPE=debug CXX="g++-6" CC="gcc-6"
