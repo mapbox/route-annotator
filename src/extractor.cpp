@@ -50,8 +50,11 @@ Extractor::Extractor(const std::string &osmfilename, Database &db) : db(db)
     std::cerr << "Number of node pairs indexed: " << db.pair_way_map.size() << "\n";
     std::cerr << "Number of ways indexed: " << db.way_tag_ranges.size() << "\n";
 
-    // TODO split up compact() method into compacting and rtree creation
-    std::cerr << "Constructing RTree ... " << std::flush;
+    if (db.createRTree)
+    {
+        std::cerr << "Constructing RTree ... " << std::flush;
+        db.build_rtree();
+    }
     db.compact();
     std::cerr << "done\n" << std::flush;
     db.dump();
@@ -81,7 +84,11 @@ Extractor::Extractor(const char *buffer,
     std::cerr << "Number of node pairs indexed: " << db.pair_way_map.size() << "\n";
     std::cerr << "Number of ways indexed: " << db.way_tag_ranges.size() << "\n";
 
-    std::cerr << "Constructing RTree ... " << std::flush;
+    if (db.createRTree)
+    {
+        std::cerr << "Constructing RTree ... " << std::flush;
+        db.build_rtree();
+    }
     db.compact();
     std::cerr << "done\n" << std::flush;
     db.dump();
