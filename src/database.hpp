@@ -10,6 +10,8 @@
  */
 struct Database
 {
+  Database();
+  Database(bool _createRTree);
   public:
     /**
      * A map of internal node id pairs to the way they belong to
@@ -79,4 +81,6 @@ struct Database
     std::vector<stringoffset_t> string_offsets;
     // A temporary lookup table so that we can re-use strings
     std::unordered_map<std::string, std::uint32_t> string_index;
+    // TODO pull rtree creation out of compact function
+    bool createRTree;
 };
