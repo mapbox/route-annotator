@@ -2,7 +2,6 @@
 
 Database::Database()
 {
-    createRTree = false;
 }
 Database::Database(bool _createRTree) : createRTree(_createRTree)
 {

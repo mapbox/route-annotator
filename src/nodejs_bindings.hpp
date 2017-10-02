@@ -34,7 +34,7 @@ class Annotator final : public Nan::ObjectWrap
     static Nan::Persistent<v8::Function> &constructor();
 
     /* Wrapping Annotator; both database and annotator do not provide default ctor: wrap in ptr */
-    bool createRTree;
+    bool createRTree = false;
     std::unique_ptr<Database> database;
     std::unique_ptr<RouteAnnotator> annotator;
 };

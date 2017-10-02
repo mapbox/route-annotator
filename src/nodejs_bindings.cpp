@@ -45,7 +45,7 @@ NAN_METHOD(Annotator::New)
             if (parsedCoords->IsBoolean())
             {
                 coordinates = parsedCoords->BooleanValue();
-            } else return Nan::ThrowTypeError("Coordinates value should be a boolean"); // todo check what kind of error to throw
+            } else return Nan::ThrowSyntaxError("Coordinates value should be a boolean");
         }
     }
 

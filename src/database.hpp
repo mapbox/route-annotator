@@ -16,7 +16,7 @@ struct Database
     /**
      * Only create RTree if explicitly told to
      */
-    bool createRTree;
+    bool createRTree = false;
     /**
      * A map of internal node id pairs to the way they belong to
      * TODO: support multiple ways???
