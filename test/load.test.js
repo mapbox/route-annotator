@@ -1,6 +1,6 @@
 var test = require('tape');
 const bindings = require('../index');
-const annotator = new bindings.Annotator();
+const annotator = new bindings.Annotator({ coordinates: true });
 const segmentmap = new bindings.SpeedLookup();
 const path = require('path');
 
