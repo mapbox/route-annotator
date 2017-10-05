@@ -34,7 +34,8 @@ NAN_MODULE_INIT(Annotator::Init)
 NAN_METHOD(Annotator::New)
 {
     bool coordinates = false;
-    if (info.Length() != 0) {
+    if (info.Length() != 0)
+    {
         if (!info[0]->IsObject())
             return Nan::ThrowTypeError("Options should be an object");
         const auto options = info[0].As<v8::Object>();
@@ -45,7 +46,11 @@ NAN_METHOD(Annotator::New)
             if (parsedCoords->IsBoolean())
             {
                 coordinates = parsedCoords->BooleanValue();
-            } else return Nan::ThrowSyntaxError("Coordinates value should be a boolean");
+            }
+            else
+            {
+                return Nan::ThrowSyntaxError("Coordinates value should be a boolean");
+            }
         }
     }
 
@@ -260,8 +265,21 @@ NAN_METHOD(Annotator::annotateRouteFromLonLats)
 
         void Execute() override
         {
-            const auto internalIds = self.annotator->coordinates_to_internal(coordinates);
-            wayIds = self.annotator->annotateRoute(internalIds);
+            try
+            {
+                const auto internalIds = self.annotator->coordinates_to_internal(coordinates);
+                wayIds = self.annotator->annotateRoute(internalIds);
+            }
+            catch (const std::exception &e)
+            {
+                /*
+                if (std::strcmp(e.what, "RTree is null", 12))
+                {
+                    return SetErrorMessage("Annotator was not configured with coordinates support");
+                }
+                */
+                return SetErrorMessage(e.what());
+            }
         }
 
         void HandleOKCallback() override

@@ -10,8 +10,9 @@
  */
 struct Database
 {
-  Database();
-  Database(bool _createRTree);
+    Database();
+    Database(bool _createRTree);
+
   public:
     /**
      * Only create RTree if explicitly told to
