@@ -270,14 +270,13 @@ NAN_METHOD(Annotator::annotateRouteFromLonLats)
                 const auto internalIds = self.annotator->coordinates_to_internal(coordinates);
                 wayIds = self.annotator->annotateRoute(internalIds);
             }
+            catch (const RouteAnnotator::RtreeError &e)
+            {
+                std::cerr << e.what() << std::endl;
+                return SetErrorMessage("Annotator not created with coordinates support");
+            }
             catch (const std::exception &e)
             {
-                /*
-                if (std::strcmp(e.what, "RTree is null", 12))
-                {
-                    return SetErrorMessage("Annotator was not configured with coordinates support");
-                }
-                */
                 return SetErrorMessage(e.what());
             }
         }
