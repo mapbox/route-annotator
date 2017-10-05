@@ -28,8 +28,9 @@ BOOST_AUTO_TEST_CASE(annotator_test_basic)
                        "</way>\n"
                        "</osm>");
 
-    Database db;
+    Database db(true);
     Extractor extractor(buffer.c_str(), buffer.size(), "xml", db);
+    BOOST_CHECK(db.rtree);
 
     BOOST_CHECK_EQUAL(db.pair_way_map.size(), 4);
     BOOST_CHECK_EQUAL(db.external_internal_map.size(), 3);

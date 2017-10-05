@@ -10,9 +10,10 @@ BOOST_AUTO_TEST_SUITE(rtree_test)
 // Verify that the bearing-bounds checking function behaves as expected
 BOOST_AUTO_TEST_CASE(rtree_basic_test)
 {
-    Database db;
+    Database db(true);
 
     db.used_nodes_list.emplace_back(point_t{1, 1}, 73);
+    db.build_rtree();
     db.compact();
     BOOST_CHECK_EQUAL(db.rtree->size(), 1);
 }
@@ -33,11 +34,12 @@ BOOST_AUTO_TEST_CASE(rtree_not_initialized)
 
 BOOST_AUTO_TEST_CASE(rtree_radius_test)
 {
-    Database db;
+    Database db(true);
 
     static const internal_nodeid_t TESTNODE{73};
 
     db.used_nodes_list.emplace_back(point_t{1, 1}, TESTNODE);
+    db.build_rtree();
     db.compact();
 
     RouteAnnotator annotator(db);
@@ -66,8 +68,9 @@ BOOST_AUTO_TEST_CASE(rtree_radius_test)
     BOOST_CHECK_EQUAL(results[0], TESTNODE);
 
     // Test at high latitudes
-    db = Database();
+    db = Database(true);
     db.used_nodes_list.emplace_back(point_t{1, 65}, TESTNODE);
+    db.build_rtree();
     db.compact();
 
     // This should be about 0.45m

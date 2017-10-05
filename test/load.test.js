@@ -128,3 +128,27 @@ test('dont load CSV and see if you get the correct response (4 INVALID_SPEEDs)',
     t.end();
   });
 });
+
+test('annotator without coordinates support - by default', function(t) {
+  const coordsFalse = new bindings.Annotator();
+  coordsFalse.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
+    if (err) throw err;
+    var coords = [[-120.1872774,48.4715898],[-120.1882910,48.4725110]];
+    coordsFalse.annotateRouteFromLonLats(coords, (err) => {
+      t.equals(err.toString(), 'Error: Annotator not created with coordinates support');
+      t.end();
+    });
+  });
+});
+
+test('annotator without coordinates support - explicit', function(t) {
+  const coordsFalse = new bindings.Annotator({ coordinates: false });
+  coordsFalse.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
+    if (err) throw err;
+    var coords = [[-120.1872774,48.4715898],[-120.1882910,48.4725110]];
+    coordsFalse.annotateRouteFromLonLats(coords, (err) => {
+      t.equals(err.toString(), 'Error: Annotator not created with coordinates support');
+      t.end();
+    });
+  });
+});
