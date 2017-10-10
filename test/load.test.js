@@ -135,7 +135,7 @@ test('annotator without coordinates support - by default', function(t) {
     if (err) throw err;
     var coords = [[-120.1872774,48.4715898],[-120.1882910,48.4725110]];
     coordsFalse.annotateRouteFromLonLats(coords, (err) => {
-      t.equals(err.toString(), 'Error: Annotator not created with coordinates support');
+      t.ok(err, 'returns error when annotator not built with coordinates support');
       t.end();
     });
   });
@@ -147,7 +147,7 @@ test('annotator without coordinates support - explicit', function(t) {
     if (err) throw err;
     var coords = [[-120.1872774,48.4715898],[-120.1882910,48.4725110]];
     coordsFalse.annotateRouteFromLonLats(coords, (err) => {
-      t.equals(err.toString(), 'Error: Annotator not created with coordinates support');
+      t.ok(err, 'returns error when annotator not built with coordinates support');
       t.end();
     });
   });
