@@ -8,9 +8,8 @@
 #include <osmium/handler.hpp>
 #include <osmium/io/file.hpp>
 #include <osmium/osm/types.hpp>
+#include <osmium/tags/matcher.hpp>
 #include <osmium/visitor.hpp>
-// We take any input that libosmium supports (XML, PBF, osm.bz2, etc)
-#include <osmium/io/any_input.hpp>
 
 // Needed for lon/lat lookups inside way handler
 #include <osmium/handler/node_locations_for_ways.hpp>
@@ -30,16 +29,29 @@ typedef osmium::index::map::SparseMemArray<osmium::unsigned_object_id_type, osmi
 // index_pos_type;
 typedef osmium::handler::NodeLocationsForWays<index_pos_type, index_neg_type> location_handler_type;
 
-Extractor::Extractor(const std::string &osmfilename, Database &db)
-    : db(db), valid_highways{"motorway",      "motorway_link", "trunk",       "trunk_link",
-                             "primary",       "primary_link",  "secondary",   "secondary_link",
-                             "tertiary",      "tertiary_link", "residential", "living_street",
-                             "unclassified",  "service",       "ferry",       "movable",
-                             "shuttle_train", "default"},
-      interesting_tags{"maxspeed"}
+void Extractor::ParseTags(std::ifstream &tagfile)
 {
-    std::cerr << "Parsing " << osmfilename << " ... " << std::flush;
-    osmium::io::File osmfile{osmfilename};
+    std::string line;
+    while (std::getline(tagfile, line))
+    {
+        tags_filter.add_rule(true, osmium::TagMatcher(line));
+    }
+}
+
+void Extractor::SetupDatabase()
+{
+    if (db.createRTree)
+    {
+        std::cout << "Constructing RTree ... " << std::flush;
+        db.build_rtree();
+    }
+    db.compact();
+    std::cout << "done\n" << std::flush;
+    db.dump();
+}
+
+void Extractor::ParseFile(const osmium::io::File &osmfile)
+{
     osmium::io::Reader fileReader(osmfile, osmium::osm_entity_bits::way |
                                                (db.createRTree ? osmium::osm_entity_bits::node
                                                                : osmium::osm_entity_bits::nothing));
@@ -60,75 +72,92 @@ Extractor::Extractor(const std::string &osmfilename, Database &db)
     {
         osmium::apply(fileReader, *this);
     }
-    std::cerr << "done\n";
-    std::cerr << "Number of node pairs indexed: " << db.pair_way_map.size() << "\n";
-    std::cerr << "Number of ways indexed: " << db.way_tag_ranges.size() << "\n";
+    std::cout << "done\n";
+    std::cout << "Number of node pairs indexed: " << db.pair_way_map.size() << "\n";
+    std::cout << "Number of ways indexed: " << db.way_tag_ranges.size() << "\n";
+}
 
-    if (db.createRTree)
+Extractor::Extractor(const std::vector<std::string> &osm_files, Database &db) : db(db)
+{
+    for (const std::string &file : osm_files)
     {
-        std::cerr << "Constructing RTree ... " << std::flush;
-        db.build_rtree();
+        std::cout << "Parsing " << file << " ... " << std::flush;
+        osmium::io::File osmfile{file};
+        ParseFile(osmfile);
     }
-    db.compact();
-    std::cerr << "done\n" << std::flush;
-    db.dump();
+    SetupDatabase();
+}
+
+Extractor::Extractor(const std::vector<std::string> &osm_files,
+                     Database &db,
+                     const std::string &tagfilename)
+    : db(db)
+{
+    // add tags to tag filter object for use in way parsing
+    if (!tagfilename.empty())
+    {
+        std::cout << "Parsing " << tagfilename << " ... " << std::flush;
+        std::ifstream tagfile(tagfilename);
+        if (!tagfile.is_open())
+        {
+            throw std::runtime_error(strerror(errno));
+        }
+        ParseTags(tagfile);
+    }
+    for (const std::string &file : osm_files)
+    {
+        std::cout << "Parsing " << file << " ... " << std::flush;
+        osmium::io::File osmfile{file};
+        ParseFile(osmfile);
+    }
+    SetupDatabase();
 }
 
 Extractor::Extractor(const char *buffer,
                      std::size_t buffersize,
                      const std::string &format,
                      Database &db)
-    : db(db), valid_highways{"motorway",      "motorway_link", "trunk",       "trunk_link",
-                             "primary",       "primary_link",  "secondary",   "secondary_link",
-                             "tertiary",      "tertiary_link", "residential", "living_street",
-                             "unclassified",  "service",       "ferry",       "movable",
-                             "shuttle_train", "default"},
-      interesting_tags{"maxspeed"}
+    : db(db)
 {
-    std::cerr << "Parsing OSM buffer in format " << format << " ... " << std::flush;
+    std::cout << "Parsing OSM buffer in format " << format << " ... " << std::flush;
     osmium::io::File osmfile{buffer, buffersize, format};
-    osmium::io::Reader fileReader(osmfile, osmium::osm_entity_bits::way |
-                                               (db.createRTree ? osmium::osm_entity_bits::node
-                                                               : osmium::osm_entity_bits::nothing));
-    if (db.createRTree)
+    ParseFile(osmfile);
+}
+
+bool Extractor::FilterWay(const osmium::Way &way)
+{
+    if (tags_filter.empty())
     {
-        int fd = open("nodes.cache", O_RDWR | O_CREAT, 0666);
-        if (fd == -1)
-        {
-            throw std::runtime_error(strerror(errno));
-        }
-        index_pos_type index_pos{fd};
-        index_neg_type index_neg;
-        location_handler_type location_handler(index_pos, index_neg);
-        location_handler.ignore_errors();
-        osmium::apply(fileReader, location_handler, *this);
+        // if not filtering by tags, filter by certain highway types by default
+        const char *highway = way.tags().get_value_by_key("highway");
+        std::vector<const char *> highway_types = {
+            "motorway",     "motorway_link", "trunk",          "trunk_link", "primary",
+            "primary_link", "secondary",     "secondary_link", "tertiary",   "tertiary_link",
+            "residential",  "living_street", "unclassified",   "service",    "ferry",
+            "movable",      "shuttle_train", "default"};
+        return highway &&
+               std::any_of(highway_types.begin(), highway_types.end(),
+                           [&highway](const auto &way) { return std::strcmp(highway, way) == 0; });
     }
     else
     {
-        osmium::apply(fileReader, *this);
+        for (auto &tag : way.tags())
+        {
+            // use this way if we find a tag that we're interested in
+            if (tags_filter(tag))
+            {
+                return true;
+            }
+        }
+        return false;
     }
-    std::cerr << "done\n";
-    std::cerr << "Number of node pairs indexed: " << db.pair_way_map.size() << "\n";
-    std::cerr << "Number of ways indexed: " << db.way_tag_ranges.size() << "\n";
-
-    if (db.createRTree)
-    {
-        std::cerr << "Constructing RTree ... " << std::flush;
-        db.build_rtree();
-    }
-    db.compact();
-    std::cerr << "done\n" << std::flush;
-    db.dump();
 }
 
 void Extractor::way(const osmium::Way &way)
 {
 
-    // Check to see if it's an interesting type of way.  We're only
-    // interested in roads at the moment.
-    const char *highway = way.tags().get_value_by_key("highway");
-
-    bool usable = highway && valid_highways.count(highway) > 0;
+    // Check if the way contains tags we are interested in
+    const bool usable = FilterWay(way);
 
     if (usable && way.nodes().size() > 1)
     {
@@ -136,16 +165,17 @@ void Extractor::way(const osmium::Way &way)
         const auto tagstart = static_cast<std::uint32_t>(db.key_value_pairs.size());
         // Create a map of the tags for this way, add the strings to the stringbuffer
         // and then add the tag map to the way map.
-        std::for_each(interesting_tags.begin(), interesting_tags.end(),
-                      [&](const std::string &key) {
-                          const char *value = way.tags().get_value_by_key(key.c_str());
-                          if (value)
-                          {
-                              const auto key_pos = db.addstring(key.c_str());
-                              const auto val_pos = db.addstring(value);
-                              db.key_value_pairs.emplace_back(key_pos, val_pos);
-                          }
-                      });
+        for (auto &tag : way.tags())
+        {
+            // use this way if we find a tag that we're interested in
+            if (tags_filter(tag))
+            {
+                const auto key_pos = db.addstring(tag.key());
+                const auto val_pos = db.addstring(tag.value());
+                db.key_value_pairs.emplace_back(key_pos, val_pos);
+            }
+        }
+
         BOOST_ASSERT(db.key_value_pairs.size() < std::numeric_limits<std::uint32_t>::max());
         const auto tagend = static_cast<std::uint32_t>(db.key_value_pairs.size() - 1);
         db.way_tag_ranges.emplace_back(tagstart, tagend);
