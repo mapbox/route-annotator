@@ -129,6 +129,36 @@ test('dont load CSV and see if you get the correct response (4 INVALID_SPEEDs)',
   });
 });
 
+test('annotator with invalid options object', function(t) {
+  try {
+    const coordsFalse = new bindings.Annotator(true);
+  }
+  catch(err) {
+    t.ok(err, 'returns error with non-object options')
+    t.end();
+  }
+});
+
+test('annotator with non-boolean coordinates options', function(t) {
+  try {
+    const coordsFalse = new bindings.Annotator({ coordinates: 1});
+  }
+  catch(err) {
+    t.ok(err, 'returns error with unrecognized annotator options');
+    t.end();
+  }
+});
+
+test('annotator with unrecognized options', function(t) {
+  try {
+    const coordsFalse = new bindings.Annotator({ coordinate: true });
+  }
+  catch(err) {
+    t.ok(err, 'returns error with unrecognized annotator options');
+    t.end();
+  }
+});
+
 test('annotator without coordinates support - by default', function(t) {
   const coordsFalse = new bindings.Annotator();
   coordsFalse.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
@@ -151,14 +181,4 @@ test('annotator without coordinates support - explicit', function(t) {
       t.end();
     });
   });
-});
-
-test.only('annotator with unrecognized options', function(t) {
-  try {
-    const coordsFalse = new bindings.Annotator({ coordinate: true });
-  }
-  catch(err) {
-    t.equals(err.toString().match('SyntaxError')[0], 'SyntaxError', 'returns error with unrecognized annotator options');
-    t.end();
-  }
 });
