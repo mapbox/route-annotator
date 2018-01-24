@@ -152,3 +152,13 @@ test('annotator without coordinates support - explicit', function(t) {
     });
   });
 });
+
+test.only('annotator with unrecognized options', function(t) {
+  try {
+    const coordsFalse = new bindings.Annotator({ coordinate: true });
+  }
+  catch(err) {
+    t.equals(err.toString().match('SyntaxError')[0], 'SyntaxError', 'returns error with unrecognized annotator options');
+    t.end();
+  }
+});
