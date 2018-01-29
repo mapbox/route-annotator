@@ -1,6 +1,6 @@
 {
   "name": "route_annotator",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Bindings for route-annotator",
   "keywords": [
     "addon",
