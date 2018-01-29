@@ -1,5 +1,8 @@
 # Route Annotator releases
 
+## 0.0.6
+ - Made RTree construction in the annotator database optional and exposed it in the node bindings as a configuration option in the Annotator object
+
 ## 0.0.5
  - Removed large unecessary test fixture from published npm module
 
