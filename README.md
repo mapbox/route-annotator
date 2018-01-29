@@ -129,6 +129,8 @@ curl "http://localhost:5000/coordlist/7.422155,43.7368838;7.4230139,43.7369751"
 
 ### Release
 
+_You must be a member of the Mapbox npm organization to do this!_
+
 - `git checkout master`
 - Update CHANGELOG.md
 - Bump version in package.json
@@ -136,4 +138,4 @@ curl "http://localhost:5000/coordlist/7.422155,43.7368838;7.4230139,43.7369751"
 - Wait for Travis to finish publishing binaries so that all travis tests pass for the publish binary commit.
 - `git tag vx.y.z -a` with Changelog list in tag message
 - `git push origin master; git push origin --tags`
-- `npm publish`
+- `npm publish --access=public`
