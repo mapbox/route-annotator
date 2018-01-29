@@ -1,11 +1,19 @@
 #include "database.hpp"
 
+Database::Database() {}
+Database::Database(bool _createRTree) : createRTree(_createRTree) {}
+
+void Database::build_rtree()
+{
+    rtree = createRTree
+                ? std::make_unique<
+                      boost::geometry::index::rtree<value_t, boost::geometry::index::rstar<8>>>(
+                      used_nodes_list.begin(), used_nodes_list.end())
+                : nullptr;
+}
+
 void Database::compact()
 {
-    rtree =
-        std::make_unique<boost::geometry::index::rtree<value_t, boost::geometry::index::rstar<8>>>(
-            used_nodes_list.begin(), used_nodes_list.end());
-
     // Tricks to free memory, swap out data with empty versions
     // This frees the memory.  shrink_to_fit doesn't guarantee that.
     std::vector<value_t>().swap(used_nodes_list);

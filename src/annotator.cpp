@@ -20,7 +20,7 @@ RouteAnnotator::coordinates_to_internal(const std::vector<point_t> &points)
     static const double MAX_DISTANCE = 5;
 
     if (!db.rtree)
-        throw std::runtime_error("RTree is null - need to call compact() on database before use");
+        throw RtreeError("RTree is null - call build_rtree() on database before use");
 
     std::vector<internal_nodeid_t> internal_nodeids;
     for (const auto &point : points)

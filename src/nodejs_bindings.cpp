@@ -33,12 +33,37 @@ NAN_MODULE_INIT(Annotator::Init)
 
 NAN_METHOD(Annotator::New)
 {
+    bool coordinates = false;
     if (info.Length() != 0)
-        return Nan::ThrowTypeError("No types expected");
+    {
+        if (!info[0]->IsObject())
+            return Nan::ThrowTypeError("Options should be an object");
+        const auto options = info[0].As<v8::Object>();
+        auto tryParseCoordinates = Nan::Get(options, Nan::New("coordinates").ToLocalChecked());
+        if (!tryParseCoordinates.IsEmpty())
+        {
+            auto parsedCoords = tryParseCoordinates.ToLocalChecked();
+            if (parsedCoords->IsBoolean())
+            {
+                coordinates = parsedCoords->BooleanValue();
+            }
+            else
+            {
+                return Nan::ThrowTypeError("Coordinates value should be a boolean");
+            }
+        }
+        else
+        {
+            // options object isn't empty, and it doesn't have a 'coordinates' option
+            // we don't accept any other options right now
+            return Nan::ThrowError("Unrecognized annotator options");
+        }
+    }
 
     if (info.IsConstructCall())
     {
         auto *const self = new Annotator;
+        self->createRTree = coordinates;
         self->Wrap(info.This());
         info.GetReturnValue().Set(info.This());
     }
@@ -57,6 +82,7 @@ NAN_METHOD(Annotator::loadOSMExtract)
     if (info.Length() != 2 || !info[0]->IsString() || !info[1]->IsFunction())
         return Nan::ThrowTypeError("String and callback expected");
 
+    // Validate function parameters, file path and callback
     const Nan::Utf8String utf8String(info[0]);
 
     if (!(*utf8String))
@@ -76,7 +102,7 @@ NAN_METHOD(Annotator::loadOSMExtract)
             try
             {
                 // Note: provide strong exception safety guarantee (rollback)
-                auto database = std::make_unique<Database>();
+                auto database = std::make_unique<Database>(self.createRTree);
                 Extractor extractor{path, *database};
                 auto annotator = std::make_unique<RouteAnnotator>(*database);
 
@@ -245,8 +271,19 @@ NAN_METHOD(Annotator::annotateRouteFromLonLats)
 
         void Execute() override
         {
-            const auto internalIds = self.annotator->coordinates_to_internal(coordinates);
-            wayIds = self.annotator->annotateRoute(internalIds);
+            try
+            {
+                const auto internalIds = self.annotator->coordinates_to_internal(coordinates);
+                wayIds = self.annotator->annotateRoute(internalIds);
+            }
+            catch (const RouteAnnotator::RtreeError &e)
+            {
+                return SetErrorMessage("Annotator not created with coordinates support");
+            }
+            catch (const std::exception &e)
+            {
+                return SetErrorMessage(e.what());
+            }
         }
 
         void HandleOKCallback() override

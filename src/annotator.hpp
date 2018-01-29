@@ -76,6 +76,12 @@ struct RouteAnnotator
      */
     tagrange_t get_tag_range(const wayid_t wayid);
 
+    struct RtreeError final : std::runtime_error
+    {
+        using base = std::runtime_error;
+        using base::base;
+    };
+
   private:
     // This is where all the data lives
     const Database &db;

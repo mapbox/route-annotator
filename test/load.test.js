@@ -1,6 +1,6 @@
 var test = require('tape');
 const bindings = require('../index');
-const annotator = new bindings.Annotator();
+const annotator = new bindings.Annotator({ coordinates: true });
 const segmentmap = new bindings.SpeedLookup();
 const path = require('path');
 
@@ -126,5 +126,59 @@ test('dont load CSV and see if you get the correct response (4 INVALID_SPEEDs)',
     if (err) { console.log(err); throw err; }
     t.same(resp, [ 4294967295, 4294967295, 4294967295 ], "Verify expected speed results");
     t.end();
+  });
+});
+
+test('annotator with invalid options object', function(t) {
+  try {
+    const coordsFalse = new bindings.Annotator(true);
+  }
+  catch(err) {
+    t.ok(err, 'returns error with non-object options')
+    t.end();
+  }
+});
+
+test('annotator with non-boolean coordinates options', function(t) {
+  try {
+    const coordsFalse = new bindings.Annotator({ coordinates: 1});
+  }
+  catch(err) {
+    t.ok(err, 'returns error with unrecognized annotator options');
+    t.end();
+  }
+});
+
+test('annotator with unrecognized options', function(t) {
+  try {
+    const coordsFalse = new bindings.Annotator({ coordinate: true });
+  }
+  catch(err) {
+    t.ok(err, 'returns error with unrecognized annotator options');
+    t.end();
+  }
+});
+
+test('annotator without coordinates support - by default', function(t) {
+  const coordsFalse = new bindings.Annotator();
+  coordsFalse.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
+    if (err) throw err;
+    var coords = [[-120.1872774,48.4715898],[-120.1882910,48.4725110]];
+    coordsFalse.annotateRouteFromLonLats(coords, (err) => {
+      t.ok(err, 'returns error when annotator not built with coordinates support');
+      t.end();
+    });
+  });
+});
+
+test('annotator without coordinates support - explicit', function(t) {
+  const coordsFalse = new bindings.Annotator({ coordinates: false });
+  coordsFalse.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
+    if (err) throw err;
+    var coords = [[-120.1872774,48.4715898],[-120.1882910,48.4725110]];
+    coordsFalse.annotateRouteFromLonLats(coords, (err) => {
+      t.ok(err, 'returns error when annotator not built with coordinates support');
+      t.end();
+    });
   });
 });

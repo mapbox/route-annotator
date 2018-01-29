@@ -74,8 +74,10 @@ function coordListHandler(annotator) {
       return res.sendStatus(400);
 
     annotator.annotateRouteFromLonLats(coordinates, (err, wayIds) => {
-      if (err)
+      if (err) {
+        console.error(err);
         return res.sendStatus(400);
+      }
 
       var response = {"way_indexes": [], "ways_seen": []};
       var way_indexes = {};

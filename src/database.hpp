@@ -10,7 +10,14 @@
  */
 struct Database
 {
+    Database();
+    Database(bool _createRTree);
+
   public:
+    /**
+     * Only create RTree if explicitly told to
+     */
+    bool createRTree = false;
     /**
      * A map of internal node id pairs to the way they belong to
      * TODO: support multiple ways???
@@ -58,7 +65,12 @@ struct Database
     std::string getstring(const stringid_t stringid) const;
 
     /**
-     * Builds the RTree and reclaims memory by discarding temporary data
+     * Builds the RTree. Needs to be called after
+     * all OSM data parsing has been added.
+     */
+    void build_rtree();
+    /**
+     * Reclaims memory by discarding temporary data
      * and shrinking vectors that have auto-grown.  Needs to be called after
      * all OSM data parsing has been added.
      */
@@ -79,4 +91,5 @@ struct Database
     std::vector<stringoffset_t> string_offsets;
     // A temporary lookup table so that we can re-use strings
     std::unordered_map<std::string, std::uint32_t> string_index;
+    // TODO pull rtree creation out of compact function
 };

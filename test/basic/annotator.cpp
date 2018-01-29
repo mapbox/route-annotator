@@ -7,15 +7,46 @@
 
 BOOST_AUTO_TEST_SUITE(annotator_test)
 
-BOOST_AUTO_TEST_CASE(annotator_test_basic)
+BOOST_AUTO_TEST_CASE(annotator_test_no_rtree)
 {
 
-    Database db;
+    Database db(false);
     const auto keyid = db.addstring("highway");
     const auto valueid = db.addstring("primary");
     db.key_value_pairs.emplace_back(keyid, valueid);
     db.way_tag_ranges.emplace_back(0, 0);
     db.pair_way_map.emplace(internal_nodepair_t{0, 1}, 0);
+    db.compact();
+    RouteAnnotator annotator(db);
+
+    std::vector<point_t> coordinates{point_t{1, 1}, point_t{1.5, 1.5}, point_t{2, 2},
+                                     point_t{3, 1}};
+    BOOST_CHECK_THROW(annotator.coordinates_to_internal(coordinates), RouteAnnotator::RtreeError);
+
+    // Check for a route pair that exists
+    std::vector<internal_nodeid_t> route{0, 1};
+    auto result = annotator.annotateRoute(route);
+    BOOST_CHECK_EQUAL(result.size(), 1);
+    BOOST_CHECK_EQUAL(result[0], 0);
+
+    auto tagrange = annotator.get_tag_range(result[0]);
+    BOOST_CHECK_EQUAL(tagrange.first, 0);
+    BOOST_CHECK_EQUAL(tagrange.second, 0);
+
+    BOOST_CHECK_EQUAL(annotator.get_tag_key(tagrange.first), "highway");
+    BOOST_CHECK_EQUAL(annotator.get_tag_value(tagrange.first), "primary");
+}
+
+BOOST_AUTO_TEST_CASE(annotator_test_basic)
+{
+
+    Database db(true);
+    const auto keyid = db.addstring("highway");
+    const auto valueid = db.addstring("primary");
+    db.key_value_pairs.emplace_back(keyid, valueid);
+    db.way_tag_ranges.emplace_back(0, 0);
+    db.pair_way_map.emplace(internal_nodepair_t{0, 1}, 0);
+    db.build_rtree();
     db.compact();
     RouteAnnotator annotator(db);
 
@@ -49,11 +80,12 @@ BOOST_AUTO_TEST_CASE(annotator_test_basic)
 BOOST_AUTO_TEST_CASE(annotator_test_externalids)
 {
 
-    Database db;
+    Database db(true);
     db.pair_way_map.emplace(internal_nodepair_t{0, 1}, 0);
     db.external_internal_map.emplace(12345, 7);
     db.external_internal_map.emplace(12346, 9);
     db.external_internal_map.emplace(12347, 13);
+    db.build_rtree();
     db.compact();
     RouteAnnotator annotator(db);
 
@@ -70,10 +102,11 @@ BOOST_AUTO_TEST_CASE(annotator_test_externalids)
 BOOST_AUTO_TEST_CASE(annotator_test_coordinates)
 {
 
-    Database db;
+    Database db(true);
     db.used_nodes_list.emplace_back(point_t{1, 1}, 7);
     db.used_nodes_list.emplace_back(point_t{2, 2}, 9);
     db.used_nodes_list.emplace_back(point_t{3, 3}, 13);
+    db.build_rtree();
     db.compact();
     RouteAnnotator annotator(db);
 
