@@ -34,8 +34,9 @@ Extractor::Extractor(const std::string &osmfilename, Database &db) : db(db)
 {
     std::cerr << "Parsing " << osmfilename << " ... " << std::flush;
     osmium::io::File osmfile{osmfilename};
-    osmium::io::Reader fileReader(osmfile,
-                                  osmium::osm_entity_bits::way | osmium::osm_entity_bits::node);
+    osmium::io::Reader fileReader(osmfile, osmium::osm_entity_bits::way |
+                                               (db.createRTree ? osmium::osm_entity_bits::node
+                                                               : osmium::osm_entity_bits::nothing));
     int fd = open("nodes.cache", O_RDWR | O_CREAT, 0666);
     if (fd == -1)
     {
@@ -68,8 +69,9 @@ Extractor::Extractor(const char *buffer,
 {
     std::cerr << "Parsing OSM buffer in format " << format << " ... " << std::flush;
     osmium::io::File osmfile{buffer, buffersize, format};
-    osmium::io::Reader fileReader(osmfile,
-                                  osmium::osm_entity_bits::way | osmium::osm_entity_bits::node);
+    osmium::io::Reader fileReader(osmfile, osmium::osm_entity_bits::way |
+                                               (db.createRTree ? osmium::osm_entity_bits::node
+                                                               : osmium::osm_entity_bits::nothing));
     int fd = open("nodes.cache", O_RDWR | O_CREAT, 0666);
     if (fd == -1)
     {
@@ -150,8 +152,6 @@ void Extractor::way(const osmium::Way &way)
              reverse](boost::tuple<const osmium::NodeRef, const osmium::NodeRef> pair) {
                 try
                 {
-                    point_t a{pair.get<0>().location().lon(), pair.get<0>().location().lat()};
-                    point_t b{pair.get<1>().location().lon(), pair.get<1>().location().lat()};
 
                     internal_nodeid_t internal_a_id = 0;
                     internal_nodeid_t internal_b_id = 0;
@@ -160,9 +160,17 @@ void Extractor::way(const osmium::Way &way)
 
                     if (tmp_a == db.external_internal_map.end())
                     {
-                        internal_a_id = static_cast<internal_nodeid_t>(db.used_nodes_list.size());
-                        db.used_nodes_list.emplace_back(a, internal_a_id);
-                        db.external_internal_map.emplace(pair.get<0>().ref(), internal_a_id);
+                        if (db.createRTree)
+                        {
+                            point_t a{pair.get<0>().location().lon(),
+                                      pair.get<0>().location().lat()};
+                            BOOST_ASSERT(db.used_nodes_list.size() ==
+                                         db.external_internal_map.size());
+                            internal_a_id = db.external_internal_map.size();
+                            db.used_nodes_list.emplace_back(a, internal_a_id);
+                        }
+                        db.external_internal_map.emplace(pair.get<0>().ref(),
+                                                         db.external_internal_map.size());
                     }
                     else
                     {
@@ -172,9 +180,17 @@ void Extractor::way(const osmium::Way &way)
                     const auto tmp_b = db.external_internal_map.find(pair.get<1>().ref());
                     if (tmp_b == db.external_internal_map.end())
                     {
-                        internal_b_id = static_cast<internal_nodeid_t>(db.used_nodes_list.size());
-                        db.used_nodes_list.emplace_back(b, internal_b_id);
-                        db.external_internal_map.emplace(pair.get<1>().ref(), internal_b_id);
+                        if (db.createRTree)
+                        {
+                            point_t b{pair.get<1>().location().lon(),
+                                      pair.get<1>().location().lat()};
+                            BOOST_ASSERT(db.used_nodes_list.size() ==
+                                         db.external_internal_map.size());
+                            internal_b_id = db.external_internal_map.size();
+                            db.used_nodes_list.emplace_back(b, internal_b_id);
+                        }
+                        db.external_internal_map.emplace(pair.get<1>().ref(),
+                                                         db.external_internal_map.size());
                     }
                     else
                     {
