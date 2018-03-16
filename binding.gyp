@@ -96,10 +96,10 @@
       }
     },
     {
-      'target_name': 'sample',
+      'target_name': 'bench',
       'dependencies': [ 'annotator' ],
       'type': 'executable',
-      'sources': [ './sample.cpp' ],
+      'sources': [ './test/bench.cpp' ],
       'include_dirs': [ 'src/' ],
       "libraries": [
         '<(module_root_dir)/mason_packages/.link/lib/libbz2.a',
