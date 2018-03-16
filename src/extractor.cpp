@@ -157,74 +157,71 @@ void Extractor::way(const osmium::Way &way)
         // This iterates over each pair of nodes.
         // Given the nodes 1,2,3,4,5,6
         // This loop will be called with (1,2), (2,3), (3,4), (4,5), (5, 6)
-        std::for_each(
-            boost::make_zip_iterator(
-                boost::make_tuple(way.nodes().cbegin(), way.nodes().cbegin() + 1)),
-            boost::make_zip_iterator(boost::make_tuple(way.nodes().cend() - 1, way.nodes().cend())),
-            [this, way_id](boost::tuple<const osmium::NodeRef, const osmium::NodeRef> pair) {
-                try
+        for (auto n = way.nodes().cbegin(); n != way.nodes().cend() - 1; n++)
+        {
+            const auto external_a = n;
+            const auto external_b = n + 1;
+            const auto external_a_ref = external_a->ref();
+            const auto external_b_ref = external_b->ref();
+            try
+            {
+
+                internal_nodeid_t internal_a_id;
+                internal_nodeid_t internal_b_id;
+
+                const auto tmp_a = db.external_internal_map.find(external_a_ref);
+
+                if (tmp_a == db.external_internal_map.end())
                 {
-
-                    internal_nodeid_t internal_a_id;
-                    internal_nodeid_t internal_b_id;
-
-                    const auto tmp_a = db.external_internal_map.find(pair.get<0>().ref());
-
-                    if (tmp_a == db.external_internal_map.end())
+                    internal_a_id = db.external_internal_map.size();
+                    if (db.createRTree)
                     {
-                        internal_a_id = db.external_internal_map.size();
-                        if (db.createRTree)
-                        {
-                            point_t a{pair.get<0>().location().lon(),
-                                      pair.get<0>().location().lat()};
-                            BOOST_ASSERT(db.used_nodes_list.size() ==
-                                         db.external_internal_map.size());
-                            db.used_nodes_list.emplace_back(a, internal_a_id);
-                        }
-                        db.external_internal_map.emplace(pair.get<0>().ref(), internal_a_id);
+                        point_t a{external_a->location().lon(), external_a->location().lat()};
+                        BOOST_ASSERT(db.used_nodes_list.size() == db.external_internal_map.size());
+                        db.used_nodes_list.emplace_back(a, internal_a_id);
                     }
-                    else
-                    {
-                        internal_a_id = tmp_a->second;
-                    }
-
-                    const auto tmp_b = db.external_internal_map.find(pair.get<1>().ref());
-                    if (tmp_b == db.external_internal_map.end())
-                    {
-                        internal_b_id = db.external_internal_map.size();
-                        if (db.createRTree)
-                        {
-                            point_t b{pair.get<1>().location().lon(),
-                                      pair.get<1>().location().lat()};
-                            BOOST_ASSERT(db.used_nodes_list.size() ==
-                                         db.external_internal_map.size());
-                            db.used_nodes_list.emplace_back(b, internal_b_id);
-                        }
-                        db.external_internal_map.emplace(pair.get<1>().ref(), internal_b_id);
-                    }
-                    else
-                    {
-                        internal_b_id = tmp_b->second;
-                    }
-
-                    if (internal_a_id < internal_b_id)
-                    {
-                        // true here indicates storage is forward
-                        db.pair_way_map.emplace(std::make_pair(internal_a_id, internal_b_id),
-                                                way_storage_t{way_id, true});
-                    }
-                    else
-                    {
-                        // false here indicates storage is backward
-                        db.pair_way_map.emplace(std::make_pair(internal_b_id, internal_a_id),
-                                                way_storage_t{way_id, false});
-                    }
+                    db.external_internal_map.emplace(external_a_ref, internal_a_id);
                 }
-                catch (const osmium::invalid_location &e)
+                else
                 {
-                    // std::cerr << "WARNING: Invalid location for one of nodes " <<
-                    // pair.get<0>().ref() << " or " << pair.get<1>().ref() << "\n";
+                    internal_a_id = tmp_a->second;
                 }
-            });
+
+                const auto tmp_b = db.external_internal_map.find(external_b_ref);
+                if (tmp_b == db.external_internal_map.end())
+                {
+                    internal_b_id = db.external_internal_map.size();
+                    if (db.createRTree)
+                    {
+                        point_t b{external_b->location().lon(), external_b->location().lat()};
+                        BOOST_ASSERT(db.used_nodes_list.size() == db.external_internal_map.size());
+                        db.used_nodes_list.emplace_back(b, internal_b_id);
+                    }
+                    db.external_internal_map.emplace(external_b_ref, internal_b_id);
+                }
+                else
+                {
+                    internal_b_id = tmp_b->second;
+                }
+
+                if (internal_a_id < internal_b_id)
+                {
+                    // true here indicates storage is forward
+                    db.pair_way_map.emplace(std::make_pair(internal_a_id, internal_b_id),
+                                            way_storage_t{way_id, true});
+                }
+                else
+                {
+                    // false here indicates storage is backward
+                    db.pair_way_map.emplace(std::make_pair(internal_b_id, internal_a_id),
+                                            way_storage_t{way_id, false});
+                }
+            }
+            catch (const osmium::invalid_location &e)
+            {
+                // std::cerr << "WARNING: Invalid location for one of nodes " <<
+                // external_a_ref << " or " << external_b_ref << "\n";
+            }
+        }
     }
 }
