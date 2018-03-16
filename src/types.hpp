@@ -12,6 +12,13 @@ typedef std::uint32_t internal_nodeid_t;
 typedef std::uint32_t wayid_t;
 typedef std::uint32_t segment_speed_t;
 
+// Way ID, and whether it the node pair for it is stored forward or backward
+typedef struct
+{
+    wayid_t id;
+    bool forward;
+} way_storage_t;
+
 static constexpr segment_speed_t INVALID_SPEED = std::numeric_limits<segment_speed_t>::max();
 
 static constexpr internal_nodeid_t INVALID_INTERNAL_NODEID =

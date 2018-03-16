@@ -8,6 +8,7 @@
 
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 /**
  * The handler for libosmium.  This class basically contains one callback that's called by
@@ -50,4 +51,5 @@ struct Extractor final : osmium::handler::Handler
     Database &db;
 
     const std::unordered_set<std::string> valid_highways;
+    const std::vector<std::string> interesting_tags;
 };

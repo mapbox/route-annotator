@@ -22,7 +22,7 @@ struct Database
      * A map of internal node id pairs to the way they belong to
      * TODO: support multiple ways???
      */
-    std::unordered_map<internal_nodepair_t, wayid_t> pair_way_map;
+    std::unordered_map<internal_nodepair_t, way_storage_t> pair_way_map;
 
     /**
      * Stores the start/end indexes for the tags for a way.  Values

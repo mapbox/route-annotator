@@ -35,7 +35,8 @@ Extractor::Extractor(const std::string &osmfilename, Database &db)
                              "primary",       "primary_link",  "secondary",   "secondary_link",
                              "tertiary",      "tertiary_link", "residential", "living_street",
                              "unclassified",  "service",       "ferry",       "movable",
-                             "shuttle_train", "default"}
+                             "shuttle_train", "default"},
+      interesting_tags{"maxspeed"}
 {
     std::cerr << "Parsing " << osmfilename << " ... " << std::flush;
     osmium::io::File osmfile{osmfilename};
@@ -74,7 +75,8 @@ Extractor::Extractor(const char *buffer,
                              "primary",       "primary_link",  "secondary",   "secondary_link",
                              "tertiary",      "tertiary_link", "residential", "living_street",
                              "unclassified",  "service",       "ferry",       "movable",
-                             "shuttle_train", "default"}
+                             "shuttle_train", "default"},
+      interesting_tags{"maxspeed"}
 {
     std::cerr << "Parsing OSM buffer in format " << format << " ... " << std::flush;
     osmium::io::File osmfile{buffer, buffersize, format};
@@ -108,30 +110,29 @@ Extractor::Extractor(const char *buffer,
 void Extractor::way(const osmium::Way &way)
 {
 
-    // Figure out which directions we need to process
-    const char *oneway = way.tags().get_value_by_key("one_way");
-    bool forward = (!oneway || std::strcmp(oneway, "yes") == 0);
-    bool reverse = (!oneway || std::strcmp(oneway, "-1") == 0);
-
     // Check to see if it's an interesting type of way.  We're only
     // interested in roads at the moment.
     const char *highway = way.tags().get_value_by_key("highway");
 
     bool usable = highway && valid_highways.count(highway) == 1;
 
-    if (usable && way.nodes().size() > 1 && (forward || reverse))
+    if (usable && way.nodes().size() > 1)
     {
 
         BOOST_ASSERT(db.key_value_pairs.size() < std::numeric_limits<std::uint32_t>::max());
         const auto tagstart = static_cast<std::uint32_t>(db.key_value_pairs.size());
         // Create a map of the tags for this way, add the strings to the stringbuffer
         // and then add the tag map to the way map.
-        for (const osmium::Tag &tag : way.tags())
-        {
-            const auto key_pos = db.addstring(tag.key());
-            const auto val_pos = db.addstring(tag.value());
-            db.key_value_pairs.emplace_back(key_pos, val_pos);
-        }
+        std::for_each(interesting_tags.begin(), interesting_tags.end(),
+                      [&](const std::string &key) {
+                          const char *value = way.tags().get_value_by_key(key.c_str());
+                          if (value)
+                          {
+                              const auto key_pos = db.addstring(key.c_str());
+                              const auto val_pos = db.addstring(value);
+                              db.key_value_pairs.emplace_back(key_pos, val_pos);
+                          }
+                      });
         db.key_value_pairs.emplace_back(db.addstring("_way_id"),
                                         db.addstring(std::to_string(way.id()).c_str()));
         BOOST_ASSERT(db.key_value_pairs.size() < std::numeric_limits<std::uint32_t>::max());
@@ -148,8 +149,7 @@ void Extractor::way(const osmium::Way &way)
             boost::make_zip_iterator(
                 boost::make_tuple(way.nodes().cbegin(), way.nodes().cbegin() + 1)),
             boost::make_zip_iterator(boost::make_tuple(way.nodes().cend() - 1, way.nodes().cend())),
-            [this, way_id, forward,
-             reverse](boost::tuple<const osmium::NodeRef, const osmium::NodeRef> pair) {
+            [this, way_id](boost::tuple<const osmium::NodeRef, const osmium::NodeRef> pair) {
                 try
                 {
 
@@ -197,15 +197,17 @@ void Extractor::way(const osmium::Way &way)
                         internal_b_id = tmp_b->second;
                     }
 
-                    if (forward)
+                    if (internal_a_id < internal_b_id)
                     {
+                        // true here indicates storage is forward
                         db.pair_way_map.emplace(std::make_pair(internal_a_id, internal_b_id),
-                                                way_id);
+                                                way_storage_t{way_id, true});
                     }
-                    if (reverse)
+                    else
                     {
+                        // false here indicates storage is backward
                         db.pair_way_map.emplace(std::make_pair(internal_b_id, internal_a_id),
-                                                way_id);
+                                                way_storage_t{way_id, false});
                     }
                 }
                 catch (const osmium::invalid_location &e)

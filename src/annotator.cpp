@@ -82,10 +82,19 @@ annotated_route_t RouteAnnotator::annotateRoute(const std::vector<internal_nodei
 
     for (std::size_t i = 0; i < route.size() - 1; i++)
     {
-        const auto way_id = db.pair_way_map.find(std::make_pair(route[i], route[i + 1]));
+        const auto way_id = [&]() {
+            if (route[i] < route[i + 1])
+            {
+                return db.pair_way_map.find(std::make_pair(route[i], route[i + 1]));
+            }
+            else
+            {
+                return db.pair_way_map.find(std::make_pair(route[i + 1], route[i]));
+            }
+        }();
         if (way_id != db.pair_way_map.end())
         {
-            result.push_back(way_id->second);
+            result.push_back(way_id->second.id);
         }
         else
         {
