@@ -43,16 +43,23 @@ Extractor::Extractor(const std::string &osmfilename, Database &db)
     osmium::io::Reader fileReader(osmfile, osmium::osm_entity_bits::way |
                                                (db.createRTree ? osmium::osm_entity_bits::node
                                                                : osmium::osm_entity_bits::nothing));
-    int fd = open("nodes.cache", O_RDWR | O_CREAT, 0666);
-    if (fd == -1)
+    if (db.createRTree)
     {
-        throw std::runtime_error(strerror(errno));
+        int fd = open("nodes.cache", O_RDWR | O_CREAT, 0666);
+        if (fd == -1)
+        {
+            throw std::runtime_error(strerror(errno));
+        }
+        index_pos_type index_pos{fd};
+        index_neg_type index_neg;
+        location_handler_type location_handler(index_pos, index_neg);
+        location_handler.ignore_errors();
+        osmium::apply(fileReader, location_handler, *this);
     }
-    index_pos_type index_pos{fd};
-    index_neg_type index_neg;
-    location_handler_type location_handler(index_pos, index_neg);
-    location_handler.ignore_errors();
-    osmium::apply(fileReader, location_handler, *this);
+    else
+    {
+        osmium::apply(fileReader, *this);
+    }
     std::cerr << "done\n";
     std::cerr << "Number of node pairs indexed: " << db.pair_way_map.size() << "\n";
     std::cerr << "Number of ways indexed: " << db.way_tag_ranges.size() << "\n";
@@ -83,16 +90,23 @@ Extractor::Extractor(const char *buffer,
     osmium::io::Reader fileReader(osmfile, osmium::osm_entity_bits::way |
                                                (db.createRTree ? osmium::osm_entity_bits::node
                                                                : osmium::osm_entity_bits::nothing));
-    int fd = open("nodes.cache", O_RDWR | O_CREAT, 0666);
-    if (fd == -1)
+    if (db.createRTree)
     {
-        throw std::runtime_error(strerror(errno));
+        int fd = open("nodes.cache", O_RDWR | O_CREAT, 0666);
+        if (fd == -1)
+        {
+            throw std::runtime_error(strerror(errno));
+        }
+        index_pos_type index_pos{fd};
+        index_neg_type index_neg;
+        location_handler_type location_handler(index_pos, index_neg);
+        location_handler.ignore_errors();
+        osmium::apply(fileReader, location_handler, *this);
     }
-    index_pos_type index_pos{fd};
-    index_neg_type index_neg;
-    location_handler_type location_handler(index_pos, index_neg);
-    location_handler.ignore_errors();
-    osmium::apply(fileReader, location_handler, *this);
+    else
+    {
+        osmium::apply(fileReader, *this);
+    }
     std::cerr << "done\n";
     std::cerr << "Number of node pairs indexed: " << db.pair_way_map.size() << "\n";
     std::cerr << "Number of ways indexed: " << db.way_tag_ranges.size() << "\n";

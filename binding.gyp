@@ -96,6 +96,41 @@
       }
     },
     {
+      'target_name': 'sample',
+      'dependencies': [ 'annotator' ],
+      'type': 'executable',
+      'sources': [ './sample.cpp' ],
+      'include_dirs': [ 'src/' ],
+      "libraries": [
+        '<(module_root_dir)/mason_packages/.link/lib/libbz2.a',
+        '<(module_root_dir)/mason_packages/.link/lib/libexpat.a',
+        '<(module_root_dir)/mason_packages/.link/lib/libboost_iostreams.a',
+        # we link to zlib here to fix this error: ../src/extractor.cpp:(.text._ZN6osmium2io16GzipDecompressor4readEv[_ZN6osmium2io16GzipDecompressor4readEv]+0x46): undefined reference to `gzoffset64'
+        # because osmium needs a custom zlib that is different that what is statically linked inside node and available on default ubuntu (which don't have gzoffset64`
+        '<(module_root_dir)/mason_packages/.link/lib/libz.a'
+      ],
+      'cflags': [
+          '<@(system_includes)'
+      ],
+      'ldflags': [
+        '-Wl,-z,now',
+      ],
+      'xcode_settings': {
+        'OTHER_LDFLAGS':[
+          '-Wl,-bind_at_load'
+        ],
+        'OTHER_CPLUSPLUSFLAGS': [
+            '<@(system_includes)'
+        ],
+        'GCC_ENABLE_CPP_RTTI': 'YES',
+        'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
+        'MACOSX_DEPLOYMENT_TARGET':'10.8',
+        'CLANG_CXX_LIBRARY': 'libc++',
+        'CLANG_CXX_LANGUAGE_STANDARD':'c++14',
+        'GCC_VERSION': 'com.apple.compilers.llvm.clang.1_0'
+      }
+    },
+    {
       'target_name': 'basic-tests',
       'dependencies': [ 'annotator' ],
       'type': 'executable',
