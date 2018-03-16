@@ -76,6 +76,8 @@ struct RouteAnnotator
      */
     tagrange_t get_tag_range(const wayid_t wayid);
 
+    std::uint64_t get_external_way_id(const wayid_t way_id);
+
     struct RtreeError final : std::runtime_error
     {
         using base = std::runtime_error;

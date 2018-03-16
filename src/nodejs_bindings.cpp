@@ -344,14 +344,23 @@ NAN_METHOD(Annotator::getAllTagsForWayId)
 
             auto tags = Nan::New<v8::Object>();
 
-            for (auto i = range.first; i <= range.second; ++i)
+            // If range.second is INT_MAX, then there was an underflow on the first
+            // item, so there are no tags to return other than the _way_id
+            if (range.second != std::numeric_limits<std::uint32_t>::max())
             {
-                const auto key = self.annotator->get_tag_key(i);
-                const auto value = self.annotator->get_tag_value(i);
+                for (auto i = range.first; i <= range.second; ++i)
+                {
+                    const auto key = self.annotator->get_tag_key(i);
+                    const auto value = self.annotator->get_tag_value(i);
 
-                tags->Set(Nan::New(std::cref(key)).ToLocalChecked(),
-                          Nan::New(std::cref(value)).ToLocalChecked());
+                    tags->Set(Nan::New(std::cref(key)).ToLocalChecked(),
+                              Nan::New(std::cref(value)).ToLocalChecked());
+                }
             }
+
+            tags->Set(Nan::New("_way_id").ToLocalChecked(),
+                      Nan::New(std::to_string(self.annotator->get_external_way_id(wayId)))
+                          .ToLocalChecked());
 
             const constexpr auto argc = 2u;
             v8::Local<v8::Value> argv[argc] = {Nan::Null(), tags};

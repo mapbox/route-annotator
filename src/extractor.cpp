@@ -114,11 +114,10 @@ void Extractor::way(const osmium::Way &way)
     // interested in roads at the moment.
     const char *highway = way.tags().get_value_by_key("highway");
 
-    bool usable = highway && valid_highways.count(highway) == 1;
+    bool usable = highway && valid_highways.count(highway) > 0;
 
     if (usable && way.nodes().size() > 1)
     {
-
         BOOST_ASSERT(db.key_value_pairs.size() < std::numeric_limits<std::uint32_t>::max());
         const auto tagstart = static_cast<std::uint32_t>(db.key_value_pairs.size());
         // Create a map of the tags for this way, add the strings to the stringbuffer
@@ -133,14 +132,13 @@ void Extractor::way(const osmium::Way &way)
                               db.key_value_pairs.emplace_back(key_pos, val_pos);
                           }
                       });
-        db.key_value_pairs.emplace_back(db.addstring("_way_id"),
-                                        db.addstring(std::to_string(way.id()).c_str()));
         BOOST_ASSERT(db.key_value_pairs.size() < std::numeric_limits<std::uint32_t>::max());
         const auto tagend = static_cast<std::uint32_t>(db.key_value_pairs.size() - 1);
         db.way_tag_ranges.emplace_back(tagstart, tagend);
 
         BOOST_ASSERT(db.way_tag_ranges.size() < std::numeric_limits<wayid_t>::max());
         const auto way_id = static_cast<wayid_t>(db.way_tag_ranges.size() - 1);
+        db.internal_to_external_way_id_map.push_back(way.id());
 
         // This iterates over each pair of nodes.
         // Given the nodes 1,2,3,4,5,6
@@ -153,24 +151,23 @@ void Extractor::way(const osmium::Way &way)
                 try
                 {
 
-                    internal_nodeid_t internal_a_id = 0;
-                    internal_nodeid_t internal_b_id = 0;
+                    internal_nodeid_t internal_a_id;
+                    internal_nodeid_t internal_b_id;
 
                     const auto tmp_a = db.external_internal_map.find(pair.get<0>().ref());
 
                     if (tmp_a == db.external_internal_map.end())
                     {
+                        internal_a_id = db.external_internal_map.size();
                         if (db.createRTree)
                         {
                             point_t a{pair.get<0>().location().lon(),
                                       pair.get<0>().location().lat()};
                             BOOST_ASSERT(db.used_nodes_list.size() ==
                                          db.external_internal_map.size());
-                            internal_a_id = db.external_internal_map.size();
                             db.used_nodes_list.emplace_back(a, internal_a_id);
                         }
-                        db.external_internal_map.emplace(pair.get<0>().ref(),
-                                                         db.external_internal_map.size());
+                        db.external_internal_map.emplace(pair.get<0>().ref(), internal_a_id);
                     }
                     else
                     {
@@ -180,17 +177,16 @@ void Extractor::way(const osmium::Way &way)
                     const auto tmp_b = db.external_internal_map.find(pair.get<1>().ref());
                     if (tmp_b == db.external_internal_map.end())
                     {
+                        internal_b_id = db.external_internal_map.size();
                         if (db.createRTree)
                         {
                             point_t b{pair.get<1>().location().lon(),
                                       pair.get<1>().location().lat()};
                             BOOST_ASSERT(db.used_nodes_list.size() ==
                                          db.external_internal_map.size());
-                            internal_b_id = db.external_internal_map.size();
                             db.used_nodes_list.emplace_back(b, internal_b_id);
                         }
-                        db.external_internal_map.emplace(pair.get<1>().ref(),
-                                                         db.external_internal_map.size());
+                        db.external_internal_map.emplace(pair.get<1>().ref(), internal_b_id);
                     }
                     else
                     {
