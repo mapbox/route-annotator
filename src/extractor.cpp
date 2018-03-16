@@ -30,7 +30,12 @@ typedef osmium::index::map::SparseMemArray<osmium::unsigned_object_id_type, osmi
 // index_pos_type;
 typedef osmium::handler::NodeLocationsForWays<index_pos_type, index_neg_type> location_handler_type;
 
-Extractor::Extractor(const std::string &osmfilename, Database &db) : db(db)
+Extractor::Extractor(const std::string &osmfilename, Database &db)
+    : db(db), valid_highways{"motorway",      "motorway_link", "trunk",       "trunk_link",
+                             "primary",       "primary_link",  "secondary",   "secondary_link",
+                             "tertiary",      "tertiary_link", "residential", "living_street",
+                             "unclassified",  "service",       "ferry",       "movable",
+                             "shuttle_train", "default"}
 {
     std::cerr << "Parsing " << osmfilename << " ... " << std::flush;
     osmium::io::File osmfile{osmfilename};
@@ -65,7 +70,11 @@ Extractor::Extractor(const char *buffer,
                      std::size_t buffersize,
                      const std::string &format,
                      Database &db)
-    : db(db)
+    : db(db), valid_highways{"motorway",      "motorway_link", "trunk",       "trunk_link",
+                             "primary",       "primary_link",  "secondary",   "secondary_link",
+                             "tertiary",      "tertiary_link", "residential", "living_street",
+                             "unclassified",  "service",       "ferry",       "movable",
+                             "shuttle_train", "default"}
 {
     std::cerr << "Parsing OSM buffer in format " << format << " ... " << std::flush;
     osmium::io::File osmfile{buffer, buffersize, format};
@@ -107,17 +116,8 @@ void Extractor::way(const osmium::Way &way)
     // Check to see if it's an interesting type of way.  We're only
     // interested in roads at the moment.
     const char *highway = way.tags().get_value_by_key("highway");
-    bool usable =
-        highway &&
-        (std::strcmp(highway, "motorway") == 0 || std::strcmp(highway, "motorway_link") == 0 ||
-         std::strcmp(highway, "trunk") == 0 || std::strcmp(highway, "trunk_link") == 0 ||
-         std::strcmp(highway, "primary") == 0 || std::strcmp(highway, "primary_link") == 0 ||
-         std::strcmp(highway, "secondary") == 0 || std::strcmp(highway, "secondary_link") == 0 ||
-         std::strcmp(highway, "tertiary") == 0 || std::strcmp(highway, "tertiary_link") == 0 ||
-         std::strcmp(highway, "residential") == 0 || std::strcmp(highway, "living_street") == 0 ||
-         std::strcmp(highway, "unclassified") == 0 || std::strcmp(highway, "service") == 0 ||
-         std::strcmp(highway, "ferry") == 0 || std::strcmp(highway, "movable") == 0 ||
-         std::strcmp(highway, "shuttle_train") == 0 || std::strcmp(highway, "default") == 0);
+
+    bool usable = highway && valid_highways.count(highway) == 1;
 
     if (usable && way.nodes().size() > 1 && (forward || reverse))
     {
