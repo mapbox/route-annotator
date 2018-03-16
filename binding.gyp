@@ -101,6 +101,14 @@
       'type': 'executable',
       'sources': [ './test/bench.cpp' ],
       'include_dirs': [ 'src/' ],
+      'conditions': [
+        ['error_on_warnings == "true"', {
+            'cflags_cc' : [ '-Werror' ],
+            'xcode_settings': {
+              'OTHER_CPLUSPLUSFLAGS': [ '-Werror' ]
+            }
+        }]
+      ],
       "libraries": [
         '<(module_root_dir)/mason_packages/.link/lib/libbz2.a',
         '<(module_root_dir)/mason_packages/.link/lib/libexpat.a',
