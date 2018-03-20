@@ -1,5 +1,14 @@
 # Route Annotator releases
 
+## 0.0.7
+ - Performance improvements (faster load times)
+    * Only parse and save node coordinates if we need to build the rtree
+    * Use faster lookup table for checking valid tag names.
+    * Only store node pairs once, flag whether storage is forward/backward.
+    * Don't store external way IDs as strings - saves space, and faster to lookup
+    * Don't use location index if there is no rtree being built.
+    * Use simpler loop - zip_iterator came with a small performance hit.
+
 ## 0.0.6
  - Made RTree construction in the annotator database optional and exposed it in the node bindings as a configuration option in the Annotator object
 
