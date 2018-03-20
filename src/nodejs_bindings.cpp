@@ -93,7 +93,7 @@ NAN_METHOD(Annotator::loadOSMExtract)
     struct OSMLoader final : Nan::AsyncWorker
     {
         explicit OSMLoader(Annotator &self_, Nan::Callback *callback, std::string path_)
-            : Nan::AsyncWorker(callback), self{self_}, path{std::move(path_)}
+            : Nan::AsyncWorker(callback, "annotator:osm.load"), self{self_}, path{std::move(path_)}
         {
         }
 
@@ -121,7 +121,7 @@ NAN_METHOD(Annotator::loadOSMExtract)
             Nan::HandleScope scope;
             const constexpr auto argc = 1u;
             v8::Local<v8::Value> argv[argc] = {Nan::Null()};
-            callback->Call(argc, argv);
+            callback->Call(argc, argv, async_resource);
         }
 
         Annotator &self;
@@ -177,7 +177,8 @@ NAN_METHOD(Annotator::annotateRouteFromNodeIds)
         explicit WayIdsFromNodeIdsLoader(Annotator &self_,
                                          Nan::Callback *callback,
                                          std::vector<external_nodeid_t> externalIds_)
-            : Nan::AsyncWorker(callback), self{self_}, externalIds{std::move(externalIds_)}
+            : Nan::AsyncWorker(callback, "annotator:osm.annotatefromnodeids"), self{self_},
+              externalIds{std::move(externalIds_)}
         {
         }
 
@@ -206,7 +207,7 @@ NAN_METHOD(Annotator::annotateRouteFromNodeIds)
             const constexpr auto argc = 2u;
             v8::Local<v8::Value> argv[argc] = {Nan::Null(), annotated};
 
-            callback->Call(argc, argv);
+            callback->Call(argc, argv, async_resource);
         }
 
         Annotator &self;
@@ -265,7 +266,8 @@ NAN_METHOD(Annotator::annotateRouteFromLonLats)
         explicit WayIdsFromLonLatsLoader(Annotator &self_,
                                          Nan::Callback *callback,
                                          std::vector<point_t> coordinates_)
-            : Nan::AsyncWorker(callback), self{self_}, coordinates{std::move(coordinates_)}
+            : Nan::AsyncWorker(callback, "annotator:osm.annotatefromlonlats"), self{self_},
+              coordinates{std::move(coordinates_)}
         {
         }
 
@@ -305,7 +307,7 @@ NAN_METHOD(Annotator::annotateRouteFromLonLats)
             const constexpr auto argc = 2u;
             v8::Local<v8::Value> argv[argc] = {Nan::Null(), annotated};
 
-            callback->Call(argc, argv);
+            callback->Call(argc, argv, async_resource);
         }
 
         Annotator &self;
@@ -332,7 +334,8 @@ NAN_METHOD(Annotator::getAllTagsForWayId)
     struct TagsForWayIdLoader final : Nan::AsyncWorker
     {
         explicit TagsForWayIdLoader(Annotator &self_, Nan::Callback *callback, wayid_t wayId_)
-            : Nan::AsyncWorker(callback), self{self_}, wayId{std::move(wayId_)}
+            : Nan::AsyncWorker(callback, "annotator:osm.gettagsforids"), self{self_},
+              wayId{std::move(wayId_)}
         {
         }
 
@@ -365,7 +368,7 @@ NAN_METHOD(Annotator::getAllTagsForWayId)
             const constexpr auto argc = 2u;
             v8::Local<v8::Value> argv[argc] = {Nan::Null(), tags};
 
-            callback->Call(argc, argv);
+            callback->Call(argc, argv, async_resource);
         }
 
         Annotator &self;
