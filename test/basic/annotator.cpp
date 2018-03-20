@@ -15,7 +15,7 @@ BOOST_AUTO_TEST_CASE(annotator_test_no_rtree)
     const auto valueid = db.addstring("primary");
     db.key_value_pairs.emplace_back(keyid, valueid);
     db.way_tag_ranges.emplace_back(0, 0);
-    db.pair_way_map.emplace(internal_nodepair_t{0, 1}, 0);
+    db.pair_way_map.emplace(internal_nodepair_t{0, 1}, way_storage_t{0, true});
     db.compact();
     RouteAnnotator annotator(db);
 
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(annotator_test_basic)
     const auto valueid = db.addstring("primary");
     db.key_value_pairs.emplace_back(keyid, valueid);
     db.way_tag_ranges.emplace_back(0, 0);
-    db.pair_way_map.emplace(internal_nodepair_t{0, 1}, 0);
+    db.pair_way_map.emplace(internal_nodepair_t{0, 1}, way_storage_t{0, true});
     db.build_rtree();
     db.compact();
     RouteAnnotator annotator(db);
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(annotator_test_externalids)
 {
 
     Database db(true);
-    db.pair_way_map.emplace(internal_nodepair_t{0, 1}, 0);
+    db.pair_way_map.emplace(internal_nodepair_t{0, 1}, way_storage_t{0, true});
     db.external_internal_map.emplace(12345, 7);
     db.external_internal_map.emplace(12346, 9);
     db.external_internal_map.emplace(12347, 13);

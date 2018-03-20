@@ -30,22 +30,36 @@ typedef osmium::index::map::SparseMemArray<osmium::unsigned_object_id_type, osmi
 // index_pos_type;
 typedef osmium::handler::NodeLocationsForWays<index_pos_type, index_neg_type> location_handler_type;
 
-Extractor::Extractor(const std::string &osmfilename, Database &db) : db(db)
+Extractor::Extractor(const std::string &osmfilename, Database &db)
+    : db(db), valid_highways{"motorway",      "motorway_link", "trunk",       "trunk_link",
+                             "primary",       "primary_link",  "secondary",   "secondary_link",
+                             "tertiary",      "tertiary_link", "residential", "living_street",
+                             "unclassified",  "service",       "ferry",       "movable",
+                             "shuttle_train", "default"},
+      interesting_tags{"maxspeed"}
 {
     std::cerr << "Parsing " << osmfilename << " ... " << std::flush;
     osmium::io::File osmfile{osmfilename};
-    osmium::io::Reader fileReader(osmfile,
-                                  osmium::osm_entity_bits::way | osmium::osm_entity_bits::node);
-    int fd = open("nodes.cache", O_RDWR | O_CREAT, 0666);
-    if (fd == -1)
+    osmium::io::Reader fileReader(osmfile, osmium::osm_entity_bits::way |
+                                               (db.createRTree ? osmium::osm_entity_bits::node
+                                                               : osmium::osm_entity_bits::nothing));
+    if (db.createRTree)
     {
-        throw std::runtime_error(strerror(errno));
+        int fd = open("nodes.cache", O_RDWR | O_CREAT, 0666);
+        if (fd == -1)
+        {
+            throw std::runtime_error(strerror(errno));
+        }
+        index_pos_type index_pos{fd};
+        index_neg_type index_neg;
+        location_handler_type location_handler(index_pos, index_neg);
+        location_handler.ignore_errors();
+        osmium::apply(fileReader, location_handler, *this);
     }
-    index_pos_type index_pos{fd};
-    index_neg_type index_neg;
-    location_handler_type location_handler(index_pos, index_neg);
-    location_handler.ignore_errors();
-    osmium::apply(fileReader, location_handler, *this);
+    else
+    {
+        osmium::apply(fileReader, *this);
+    }
     std::cerr << "done\n";
     std::cerr << "Number of node pairs indexed: " << db.pair_way_map.size() << "\n";
     std::cerr << "Number of ways indexed: " << db.way_tag_ranges.size() << "\n";
@@ -64,22 +78,35 @@ Extractor::Extractor(const char *buffer,
                      std::size_t buffersize,
                      const std::string &format,
                      Database &db)
-    : db(db)
+    : db(db), valid_highways{"motorway",      "motorway_link", "trunk",       "trunk_link",
+                             "primary",       "primary_link",  "secondary",   "secondary_link",
+                             "tertiary",      "tertiary_link", "residential", "living_street",
+                             "unclassified",  "service",       "ferry",       "movable",
+                             "shuttle_train", "default"},
+      interesting_tags{"maxspeed"}
 {
     std::cerr << "Parsing OSM buffer in format " << format << " ... " << std::flush;
     osmium::io::File osmfile{buffer, buffersize, format};
-    osmium::io::Reader fileReader(osmfile,
-                                  osmium::osm_entity_bits::way | osmium::osm_entity_bits::node);
-    int fd = open("nodes.cache", O_RDWR | O_CREAT, 0666);
-    if (fd == -1)
+    osmium::io::Reader fileReader(osmfile, osmium::osm_entity_bits::way |
+                                               (db.createRTree ? osmium::osm_entity_bits::node
+                                                               : osmium::osm_entity_bits::nothing));
+    if (db.createRTree)
     {
-        throw std::runtime_error(strerror(errno));
+        int fd = open("nodes.cache", O_RDWR | O_CREAT, 0666);
+        if (fd == -1)
+        {
+            throw std::runtime_error(strerror(errno));
+        }
+        index_pos_type index_pos{fd};
+        index_neg_type index_neg;
+        location_handler_type location_handler(index_pos, index_neg);
+        location_handler.ignore_errors();
+        osmium::apply(fileReader, location_handler, *this);
     }
-    index_pos_type index_pos{fd};
-    index_neg_type index_neg;
-    location_handler_type location_handler(index_pos, index_neg);
-    location_handler.ignore_errors();
-    osmium::apply(fileReader, location_handler, *this);
+    else
+    {
+        osmium::apply(fileReader, *this);
+    }
     std::cerr << "done\n";
     std::cerr << "Number of node pairs indexed: " << db.pair_way_map.size() << "\n";
     std::cerr << "Number of ways indexed: " << db.way_tag_ranges.size() << "\n";
@@ -97,106 +124,104 @@ Extractor::Extractor(const char *buffer,
 void Extractor::way(const osmium::Way &way)
 {
 
-    // Figure out which directions we need to process
-    const char *oneway = way.tags().get_value_by_key("one_way");
-    bool forward = (!oneway || std::strcmp(oneway, "yes") == 0);
-    bool reverse = (!oneway || std::strcmp(oneway, "-1") == 0);
-
     // Check to see if it's an interesting type of way.  We're only
     // interested in roads at the moment.
     const char *highway = way.tags().get_value_by_key("highway");
-    bool usable =
-        highway &&
-        (std::strcmp(highway, "motorway") == 0 || std::strcmp(highway, "motorway_link") == 0 ||
-         std::strcmp(highway, "trunk") == 0 || std::strcmp(highway, "trunk_link") == 0 ||
-         std::strcmp(highway, "primary") == 0 || std::strcmp(highway, "primary_link") == 0 ||
-         std::strcmp(highway, "secondary") == 0 || std::strcmp(highway, "secondary_link") == 0 ||
-         std::strcmp(highway, "tertiary") == 0 || std::strcmp(highway, "tertiary_link") == 0 ||
-         std::strcmp(highway, "residential") == 0 || std::strcmp(highway, "living_street") == 0 ||
-         std::strcmp(highway, "unclassified") == 0 || std::strcmp(highway, "service") == 0 ||
-         std::strcmp(highway, "ferry") == 0 || std::strcmp(highway, "movable") == 0 ||
-         std::strcmp(highway, "shuttle_train") == 0 || std::strcmp(highway, "default") == 0);
 
-    if (usable && way.nodes().size() > 1 && (forward || reverse))
+    bool usable = highway && valid_highways.count(highway) > 0;
+
+    if (usable && way.nodes().size() > 1)
     {
-
         BOOST_ASSERT(db.key_value_pairs.size() < std::numeric_limits<std::uint32_t>::max());
         const auto tagstart = static_cast<std::uint32_t>(db.key_value_pairs.size());
         // Create a map of the tags for this way, add the strings to the stringbuffer
         // and then add the tag map to the way map.
-        for (const osmium::Tag &tag : way.tags())
-        {
-            const auto key_pos = db.addstring(tag.key());
-            const auto val_pos = db.addstring(tag.value());
-            db.key_value_pairs.emplace_back(key_pos, val_pos);
-        }
-        db.key_value_pairs.emplace_back(db.addstring("_way_id"),
-                                        db.addstring(std::to_string(way.id()).c_str()));
+        std::for_each(interesting_tags.begin(), interesting_tags.end(),
+                      [&](const std::string &key) {
+                          const char *value = way.tags().get_value_by_key(key.c_str());
+                          if (value)
+                          {
+                              const auto key_pos = db.addstring(key.c_str());
+                              const auto val_pos = db.addstring(value);
+                              db.key_value_pairs.emplace_back(key_pos, val_pos);
+                          }
+                      });
         BOOST_ASSERT(db.key_value_pairs.size() < std::numeric_limits<std::uint32_t>::max());
         const auto tagend = static_cast<std::uint32_t>(db.key_value_pairs.size() - 1);
         db.way_tag_ranges.emplace_back(tagstart, tagend);
 
         BOOST_ASSERT(db.way_tag_ranges.size() < std::numeric_limits<wayid_t>::max());
         const auto way_id = static_cast<wayid_t>(db.way_tag_ranges.size() - 1);
+        db.internal_to_external_way_id_map.push_back(way.id());
 
         // This iterates over each pair of nodes.
         // Given the nodes 1,2,3,4,5,6
         // This loop will be called with (1,2), (2,3), (3,4), (4,5), (5, 6)
-        std::for_each(
-            boost::make_zip_iterator(
-                boost::make_tuple(way.nodes().cbegin(), way.nodes().cbegin() + 1)),
-            boost::make_zip_iterator(boost::make_tuple(way.nodes().cend() - 1, way.nodes().cend())),
-            [this, way_id, forward,
-             reverse](boost::tuple<const osmium::NodeRef, const osmium::NodeRef> pair) {
-                try
+        for (auto n = way.nodes().cbegin(); n != way.nodes().cend() - 1; n++)
+        {
+            const auto external_a = n;
+            const auto external_b = n + 1;
+            const auto external_a_ref = external_a->ref();
+            const auto external_b_ref = external_b->ref();
+            try
+            {
+
+                internal_nodeid_t internal_a_id;
+                internal_nodeid_t internal_b_id;
+
+                const auto tmp_a = db.external_internal_map.find(external_a_ref);
+
+                if (tmp_a == db.external_internal_map.end())
                 {
-                    point_t a{pair.get<0>().location().lon(), pair.get<0>().location().lat()};
-                    point_t b{pair.get<1>().location().lon(), pair.get<1>().location().lat()};
-
-                    internal_nodeid_t internal_a_id = 0;
-                    internal_nodeid_t internal_b_id = 0;
-
-                    const auto tmp_a = db.external_internal_map.find(pair.get<0>().ref());
-
-                    if (tmp_a == db.external_internal_map.end())
+                    internal_a_id = db.external_internal_map.size();
+                    if (db.createRTree)
                     {
-                        internal_a_id = static_cast<internal_nodeid_t>(db.used_nodes_list.size());
+                        point_t a{external_a->location().lon(), external_a->location().lat()};
+                        BOOST_ASSERT(db.used_nodes_list.size() == db.external_internal_map.size());
                         db.used_nodes_list.emplace_back(a, internal_a_id);
-                        db.external_internal_map.emplace(pair.get<0>().ref(), internal_a_id);
                     }
-                    else
-                    {
-                        internal_a_id = tmp_a->second;
-                    }
-
-                    const auto tmp_b = db.external_internal_map.find(pair.get<1>().ref());
-                    if (tmp_b == db.external_internal_map.end())
-                    {
-                        internal_b_id = static_cast<internal_nodeid_t>(db.used_nodes_list.size());
-                        db.used_nodes_list.emplace_back(b, internal_b_id);
-                        db.external_internal_map.emplace(pair.get<1>().ref(), internal_b_id);
-                    }
-                    else
-                    {
-                        internal_b_id = tmp_b->second;
-                    }
-
-                    if (forward)
-                    {
-                        db.pair_way_map.emplace(std::make_pair(internal_a_id, internal_b_id),
-                                                way_id);
-                    }
-                    if (reverse)
-                    {
-                        db.pair_way_map.emplace(std::make_pair(internal_b_id, internal_a_id),
-                                                way_id);
-                    }
+                    db.external_internal_map.emplace(external_a_ref, internal_a_id);
                 }
-                catch (const osmium::invalid_location &e)
+                else
                 {
-                    // std::cerr << "WARNING: Invalid location for one of nodes " <<
-                    // pair.get<0>().ref() << " or " << pair.get<1>().ref() << "\n";
+                    internal_a_id = tmp_a->second;
                 }
-            });
+
+                const auto tmp_b = db.external_internal_map.find(external_b_ref);
+                if (tmp_b == db.external_internal_map.end())
+                {
+                    internal_b_id = db.external_internal_map.size();
+                    if (db.createRTree)
+                    {
+                        point_t b{external_b->location().lon(), external_b->location().lat()};
+                        BOOST_ASSERT(db.used_nodes_list.size() == db.external_internal_map.size());
+                        db.used_nodes_list.emplace_back(b, internal_b_id);
+                    }
+                    db.external_internal_map.emplace(external_b_ref, internal_b_id);
+                }
+                else
+                {
+                    internal_b_id = tmp_b->second;
+                }
+
+                if (internal_a_id < internal_b_id)
+                {
+                    // true here indicates storage is forward
+                    db.pair_way_map.emplace(std::make_pair(internal_a_id, internal_b_id),
+                                            way_storage_t{way_id, true});
+                }
+                else
+                {
+                    // false here indicates storage is backward
+                    db.pair_way_map.emplace(std::make_pair(internal_b_id, internal_a_id),
+                                            way_storage_t{way_id, false});
+                }
+            }
+            catch (const osmium::invalid_location &e)
+            {
+                // std::cerr << "WARNING: Invalid location for one of nodes " <<
+                // external_a_ref << " or " << external_b_ref << "\n";
+            }
+        }
     }
 }

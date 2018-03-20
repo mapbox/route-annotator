@@ -1,6 +1,6 @@
 {
   "name": "@mapbox/route-annotator",
-  "version": "0.0.6",
+  "version": "0.0.7-rc2",
   "description": "Bindings for route-annotator",
   "keywords": [
     "addon",
@@ -25,7 +25,7 @@
   "dependencies": {
     "@mapbox/cloudfriend": "^1.9.0",
     "aws-sdk": "^2.3.5",
-    "nan": "^2.2.1",
+    "nan": "^2.10.0",
     "node-cmake": "^1.2.0",
     "node-pre-gyp": "^0.6.26",
     "tape": "^4.6.3"

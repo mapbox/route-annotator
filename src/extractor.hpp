@@ -6,6 +6,10 @@
 #include "database.hpp"
 #include "types.hpp"
 
+#include <string>
+#include <unordered_set>
+#include <vector>
+
 /**
  * The handler for libosmium.  This class basically contains one callback that's called by
  * libosmium as it parses our OSM file.
@@ -45,4 +49,7 @@ struct Extractor final : osmium::handler::Handler
     // Internal reference to the db we're going to dump everything
     // into
     Database &db;
+
+    const std::unordered_set<std::string> valid_highways;
+    const std::vector<std::string> interesting_tags;
 };

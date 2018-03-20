@@ -89,7 +89,7 @@ NAN_METHOD(SpeedLookup::loadCSV)
         explicit CSVLoader(v8::Local<v8::Object> self_,
                            Nan::Callback *callback,
                            std::vector<std::string> paths_)
-            : Nan::AsyncWorker(callback), paths{std::move(paths_)}
+            : Nan::AsyncWorker(callback, "annotator:speed.load"), paths{std::move(paths_)}
         {
             SaveToPersistent("self", self_);
         }
@@ -118,7 +118,7 @@ NAN_METHOD(SpeedLookup::loadCSV)
             swap(unwrapped->datamap, map);
             const constexpr auto argc = 1u;
             v8::Local<v8::Value> argv[argc] = {Nan::Null()};
-            callback->Call(argc, argv);
+            callback->Call(argc, argv, async_resource);
         }
 
         std::vector<std::string> paths;
@@ -176,7 +176,8 @@ NAN_METHOD(SpeedLookup::getRouteSpeeds)
         Worker(std::shared_ptr<SegmentSpeedMap> datamap_,
                Nan::Callback *callback,
                std::vector<external_nodeid_t> nodeIds)
-            : Base(callback), datamap{datamap_}, nodeIds(std::move(nodeIds))
+            : Base(callback, "annotator:speed.annotatefromnodeids"), datamap{datamap_},
+              nodeIds(std::move(nodeIds))
         {
         }
 
@@ -208,7 +209,7 @@ NAN_METHOD(SpeedLookup::getRouteSpeeds)
             const auto argc = 2u;
             v8::Local<v8::Value> argv[argc] = {Nan::Null(), jsAnnotations};
 
-            callback->Call(argc, argv);
+            callback->Call(argc, argv, async_resource);
         }
 
         std::shared_ptr<SegmentSpeedMap> datamap;
