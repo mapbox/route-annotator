@@ -1,6 +1,6 @@
 {
   "name": "@mapbox/route-annotator",
-  "version": "0.1.0-rc2",
+  "version": "0.1.0-rc3",
   "description": "Bindings for route-annotator",
   "keywords": [
     "addon",
