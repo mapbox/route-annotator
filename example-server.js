@@ -9,10 +9,11 @@ function main() {
   const argc = argv.length;
 
   if (argc < 2)
-    return console.error(`Usage: ${__filename} FILE [PORT]`);
+    return console.error(`Usage: ${__filename} OSMFILE [TAG FILE]`);
 
   const osmFile = argv[1];
-  const port = argc == 3 ? argv[2] : 5000;
+  const tagFile = argv[2] || "";
+  const port = process.env.ANNOTATOR_PORT || 5000;
 
   const app = express();
 
@@ -26,7 +27,7 @@ function main() {
   app.get('/nodelist/:nodelist', nodeListHandler(annotator));
   app.get('/coordlist/:coordlist', coordListHandler(annotator));
 
-  annotator.loadOSMExtract(osmFile, (err) => {
+  annotator.loadOSMExtract(osmFile, tagFile, (err) => {
     if (err)
       return console.error(err);
 
@@ -52,9 +53,25 @@ function nodeListHandler(annotator) {
       if (err)
         return res.sendStatus(400);
 
-      // TODO(daniel-j-h): standardize format for {wayId, tags}, accumulate and send back
-      // wayIds.map(annotator.getAllTagsForWayId(wayId, (err, tags) => {}));
-      res.json({'message': 'Danpat needs to standardize a format'});
+      var response = {"way_indexes": [], "ways_seen": []};
+      var way_indexes = {};
+
+      async.each(wayIds, (way_id, next) => {
+        if (way_id === null) return next();
+          annotator.getAllTagsForWayId(way_id, (err, tags) => {
+            if (err) res.sendStatus(400);
+            var wid = tags["_way_id"];
+            if (!way_indexes.hasOwnProperty(wid)) {
+              way_indexes[wid] = Object.keys(way_indexes).length;
+              response.ways_seen.push(tags);
+            }
+            response.way_indexes.push(way_indexes[wid]);
+            next();
+          });
+        }
+      }, (err, data) => {
+        res.json(response);
+      });
     });
   };
 }

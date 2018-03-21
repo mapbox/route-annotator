@@ -1,5 +1,10 @@
 # Route Annotator releases
 
+## Unreleased
+- Added filtering option based on a file of OSM tags
+    * loadOSMExtract can optionally be given another path to a file containing OSM tags on which to filter data storage
+    * loadOSMExtract now accepts an array of OSM data files in addition to a single string path
+
 ## 0.0.7
  - Performance improvements (faster load times)
     * Only parse and save node coordinates if we need to build the rtree

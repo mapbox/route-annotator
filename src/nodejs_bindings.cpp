@@ -79,21 +79,79 @@ NAN_METHOD(Annotator::loadOSMExtract)
     // In case we already loaded a dataset, this function will transactionally swap in a new one
     auto *const self = Nan::ObjectWrap::Unwrap<Annotator>(info.Holder());
 
-    if (info.Length() != 2 || !info[0]->IsString() || !info[1]->IsFunction())
-        return Nan::ThrowTypeError("String and callback expected");
+    // Validate file paths and callback
+    if (info.Length() < 2)
+    {
+        return Nan::ThrowTypeError("Expected at least two arguments");
+    }
 
-    // Validate function parameters, file path and callback
-    const Nan::Utf8String utf8String(info[0]);
+    std::vector<std::string> osm_paths;
+    std::string tag_path;
+    // validate OSM file paths - either a string or array of strings
+    if (!info[0]->IsString() && !info[0]->IsArray())
+    {
+        return Nan::ThrowTypeError("OSM files expected as string (or array of strings)");
+    }
+    // Validate callback
+    if (info.Length() == 2)
+    {
+        if (!info[1]->IsFunction())
+        {
+            return Nan::ThrowTypeError("Missing callback function");
+        }
+    }
+    // Validate tag file and callback
+    else if (info.Length() == 3)
+    {
+        if (!info[1]->IsString() || !info[2]->IsFunction())
+        {
+            return Nan::ThrowTypeError(
+                "Expecting a string (or array of strings), a string, and a callback");
+        }
+        // convert tag file path into string
+        const v8::String::Utf8Value tag_utf8String(info[1]);
+        if (!(*tag_utf8String))
+            return Nan::ThrowError("Unable to convert to Utf8String");
 
-    if (!(*utf8String))
-        return Nan::ThrowError("Unable to convert to Utf8String");
+        tag_path.assign(*tag_utf8String, tag_utf8String.length());
+    }
+    // Parse osm files into vector
+    if (info[0]->IsString())
+    {
+        const v8::String::Utf8Value osm_utf8String(info[0]);
+        osm_paths.emplace_back(*osm_utf8String, osm_utf8String.length());
+    }
+    else if (info[0]->IsArray())
+    {
+        const auto file_array = v8::Local<v8::Array>::Cast(info[0]);
+        if (file_array->Length() < 1)
+            return Nan::ThrowTypeError("Input OSM files array can't be empty");
+        for (std::uint32_t idx = 0; idx < file_array->Length(); ++idx)
+        {
+            if (!file_array->Get(idx)->IsString())
+            {
+                // TODO include the idx number in this error message
+                return Nan::ThrowError("Unable to convert file path to Utf8String");
+            }
 
-    std::string path{*utf8String, *utf8String + utf8String.length()};
+            const v8::String::Utf8Value file{file_array->Get(idx)};
+            if (!(*file))
+                return Nan::ThrowError("Unable to convert file path to Utf8String");
+            osm_paths.emplace_back(*file, file.length());
+        }
+    }
+    // gotta have some files
+    if (osm_paths.empty())
+        return Nan::ThrowError("No file paths found");
 
     struct OSMLoader final : Nan::AsyncWorker
     {
-        explicit OSMLoader(Annotator &self_, Nan::Callback *callback, std::string path_)
-            : Nan::AsyncWorker(callback, "annotator:osm.load"), self{self_}, path{std::move(path_)}
+        explicit OSMLoader(Annotator &self_,
+                           Nan::Callback *callback,
+                           std::vector<std::string> osm_paths_,
+                           std::string tag_path_)
+            : Nan::AsyncWorker(callback, "annotator:osm.load"), self{self_},
+              osm_paths{std::move(osm_paths_)}, tag_path{tag_path_}
         {
         }
 
@@ -103,7 +161,7 @@ NAN_METHOD(Annotator::loadOSMExtract)
             {
                 // Note: provide strong exception safety guarantee (rollback)
                 auto database = std::make_unique<Database>(self.createRTree);
-                Extractor extractor{path, *database};
+                Extractor extractor{osm_paths, *database, tag_path};
                 auto annotator = std::make_unique<RouteAnnotator>(*database);
 
                 // Transactionally swap (noexcept)
@@ -125,11 +183,14 @@ NAN_METHOD(Annotator::loadOSMExtract)
         }
 
         Annotator &self;
-        std::string path;
+        std::vector<std::string> osm_paths;
+        std::string tag_path;
     };
 
-    auto *callback = new Nan::Callback{info[1].As<v8::Function>()};
-    Nan::AsyncQueueWorker(new OSMLoader{*self, callback, std::move(path)});
+    auto *callback = info.Length() == 3 ? new Nan::Callback{info[2].As<v8::Function>()}
+                                        : new Nan::Callback{info[1].As<v8::Function>()};
+    Nan::AsyncQueueWorker(
+        new OSMLoader{*self, callback, std::move(osm_paths), std::move(tag_path)});
 }
 
 NAN_METHOD(Annotator::annotateRouteFromNodeIds)
@@ -146,7 +207,7 @@ NAN_METHOD(Annotator::annotateRouteFromNodeIds)
 
     // Guard against empty or one nodeId for which no wayId can be assigned
     if (jsNodeIds->Length() < 2)
-        return info.GetReturnValue().Set(Nan::New<v8::Array>());
+        return Nan::ThrowTypeError("At least two node ids required");
 
     std::vector<external_nodeid_t> externalIds(jsNodeIds->Length());
 

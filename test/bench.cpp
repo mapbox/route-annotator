@@ -1,6 +1,6 @@
 #include <chrono>
-#include <cstdlib>
 #include <chrono>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <utility>
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
     Database db(false);
-    Extractor extractor(argv[1], db);
+    Extractor extractor({std::string(argv[1])}, db);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
     std::cout << "Done in "
