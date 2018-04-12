@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/mapbox/route-annotator.svg?branch=master)](https://travis-ci.org/mapbox/route-annotator)
+[![Build Status](https://travis-ci.org/mapbox/route-annotator.svg?branch=master)](https://travis-ci.org/mapbox/route-annotator) ![CodeCov](https://codecov.io/gh/mapbox/route-annotator/branch/master/graph/badge.svg)
 
 # Route Annotator
 
@@ -68,7 +68,7 @@ taglookup.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
       console.log(tags);
     });
   });
-}); 
+});
 
 
 // Do the same thing, but this time use coordinates instead
@@ -84,7 +84,7 @@ taglookup.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
       console.log(tags);
     });
   });
-}); 
+});
 
 ```
 
