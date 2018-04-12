@@ -10,3 +10,4 @@ nodes.cache
 .mason
 .toolchain
 local.env
+coverage/

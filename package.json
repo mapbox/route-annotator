@@ -16,11 +16,14 @@
   "main": "index.js",
   "scripts": {
     "test": "tape test/*.test.js",
+    "coverage": "istanbul cover tape test/*.test.js && codecov",
     "install": "node-pre-gyp install --fallback-to-build"
   },
   "devDependencies": {
+    "async": "^2.0.0-rc.3",
+    "codecov": "^3.0.0",
     "express": "^4.13.4",
-    "async": "^2.0.0-rc.3"
+    "istanbul": "^0.4.5"
   },
   "dependencies": {
     "@mapbox/cloudfriend": "^1.9.0",
