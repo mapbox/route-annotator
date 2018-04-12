@@ -122,6 +122,7 @@ Extractor::Extractor(const char *buffer,
     std::cout << "Parsing OSM buffer in format " << format << " ... " << std::flush;
     osmium::io::File osmfile{buffer, buffersize, format};
     ParseFile(osmfile);
+    SetupDatabase();
 }
 
 bool Extractor::FilterWay(const osmium::Way &way)
