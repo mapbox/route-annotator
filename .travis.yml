@@ -38,7 +38,7 @@ before_script:
 script:
   - true
 
-# the matrix allows you to specify different operating systems and environments to 
+# the matrix allows you to specify different operating systems and environments to
 # run your tests and build binaries
 matrix:
   include:
@@ -112,7 +112,7 @@ matrix:
       # Overrides `script` to publish coverage data to codecov
       before_script:
         - ./scripts/format.sh
-        - npm test
+        - npm run coverage
         - mason install llvm-cov ${MASON_LLVM_RELEASE}
         - mason link llvm-cov ${MASON_LLVM_RELEASE}
         - which llvm-cov
