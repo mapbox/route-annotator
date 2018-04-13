@@ -8,7 +8,7 @@ What issue is this PR targeting? In a few words, what does the PR add, change, o
 - [ ] Update relevant CHANGELOG and/or the README
 - [ ] Get a review
 - [ ] Rebase and clean up commits
-- [ ] Merge & release
+- [ ] Merge & release (see README for release steps)
 
 ## Relevant parties and issues
 
