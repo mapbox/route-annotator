@@ -1,6 +1,8 @@
 # Route Annotator releases
 
 ## Unreleased
+
+## 0.1.1
 - Fixed code coverage environment and expanded test coverage
 - Add support for Node 8 pre-published binaries
 
