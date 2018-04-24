@@ -178,11 +178,12 @@ void Extractor::way(const osmium::Way &way)
         }
 
         BOOST_ASSERT(db.key_value_pairs.size() < std::numeric_limits<std::uint32_t>::max());
-        const auto tagend = static_cast<std::uint32_t>(db.key_value_pairs.size() - 1);
+        const auto tagend = static_cast<std::uint32_t>(db.key_value_pairs.size());
         db.way_tag_ranges.emplace_back(tagstart, tagend);
 
         BOOST_ASSERT(db.way_tag_ranges.size() < std::numeric_limits<wayid_t>::max());
-        const auto way_id = static_cast<wayid_t>(db.way_tag_ranges.size() - 1);
+        const auto way_id =
+            static_cast<wayid_t>(db.way_tag_ranges.empty() ? 0 : (db.way_tag_ranges.size() - 1));
         db.internal_to_external_way_id_map.push_back(way.id());
 
         // This iterates over each pair of nodes.
