@@ -1,2 +1,16 @@
 ignore:
   - "test"
+
+coverage:
+  precision: 2
+  round: down
+  range: 70...100
+
+  status:
+    project: true
+    patch:
+      default:
+        enabled: yes
+        target: 95%
+        threshold: 0.5%
+    changes: false
