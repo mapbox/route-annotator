@@ -4,11 +4,171 @@ const annotator = new bindings.Annotator({ coordinates: true });
 const segmentmap = new bindings.SpeedLookup();
 const path = require('path');
 
+test('invalid initialization', (t) => {
+  try {
+    const tempannotator1 = new bindings.Annotator({ coordinates2: true });
+    t.fail('Should not get here');
+    t.end();
+  }
+  catch(err) {
+    t.ok('Should fail to initialize on invalid options');
+  }
+
+  try {
+    const tempannotator2 = bindings.Annotator({ coordinates: false });
+    t.fail('Should not get here');
+    t.end();
+  }
+  catch(err) {
+    t.ok('Should fail to initialize, needs `new` keyword');
+    t.end();
+  }
+});
+
+test('annotator use before initialization', (t) => {
+  try {
+    annotator.annotateRouteFromNodeIds([1,2], (err, wayIds) => {
+      t.fail('Should not get here');
+    })
+    t.fail('Should not get here');
+  }
+  catch (err) {
+    t.ok(err, "Should fail if not yet initialized");
+  }
+  try {
+    annotator.annotateRouteFromLonLats([1,2], (err, wayIds) => {
+      t.fail('Should not get here');
+    })
+    t.fail('Should not get here');
+  }
+  catch (err) {
+    t.ok(err, "Should fail if not yet initialized");
+  }
+
+  try {
+    annotator.getAllTagsForWayId(99, (err, wayIds) => {
+      t.fail('Should not get here');
+    })
+    t.fail('Should not get here');
+  }
+  catch (err) {
+    t.ok(err, "Should fail if not yet initialized");
+    t.end();
+  }
+
+});
+
+test('invalid load options', function(t) {
+  try {
+    annotator.loadOSMExtract(1234, (err) => {
+      t.fail('Should never get here');;
+    });
+    t.fail('Should never get here');;
+  }
+  catch (err) {
+    t.ok(err, 'Should fail if you don\'t pass in a filename');
+  }
+
+  try {
+    annotator.loadOSMExtract("dummyfile", 1234);
+    t.fail('Should never get here');;
+  }
+  catch (err) {
+    t.ok(err, 'Should fail if the second parameter isn\'t a callback');
+  }
+
+  try {
+    annotator.loadOSMExtract([1234], (err) => {
+      t.fail("Should never get here");
+    });
+    t.fail('Should never get here');;
+  }
+  catch (err) {
+    t.ok(err, 'Should fail if an array member isn\'t a string');
+    t.end();
+  }
+
+});
+
 test('load extract', function(t) {
   annotator.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
      if (err) throw err;
      t.end();
   });
+});
+
+test('invalid annotation parameters', (t) => {
+  try {
+    annotator.annotateRouteFromNodeIds([-1, 2], (err, wayIds) => {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if a nodeID is not convertible to unsigned integer");
+  }
+
+  try {
+    annotator.annotateRouteFromNodeIds(["asdf", 2], (err, wayIds) => {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if a nodeID is not a number");
+  }
+
+  try {
+    annotator.annotateRouteFromLonLats(["asdf", 2], (err, wayIds) => {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if lonlats isn't an array of arrays");
+  }
+
+  try {
+    annotator.annotateRouteFromLonLats([[1,2]], (err, wayIds) => {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if not enough lonlats are supplied");
+  }
+
+  try {
+    annotator.annotateRouteFromLonLats([[1,2],[1]], (err, wayIds) => {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if not all lonlats are pairs (too short)");
+  }
+
+  try {
+    annotator.annotateRouteFromLonLats([[1,2],[1,2,3]], (err, wayIds) => {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if not all lonlats are pairs (too long)");
+  }
+
+  try {
+    annotator.annotateRouteFromLonLats([[1,2],[1,"2"]], (err, wayIds) => {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if not all lonlats are numeric values");
+    t.end();
+  }
+
 });
 
 test('annotate by node', function(t) {
@@ -27,16 +187,47 @@ test('annotate by node', function(t) {
 });
 
 test('annotate by coordinate', function(t) {
-    var coords = [[-120.1872774,48.4715898],[-120.1882910,48.4725110]];
+    var coords = [[-120.1872774,48.4715898],[-120.1882910,48.4725110],[0,0]];
     annotator.annotateRouteFromLonLats(coords, (err, wayIds) => {
       if (err) throw err;
-      t.same(wayIds, [0], "Verify got two hits on the first way");
+      t.same(wayIds, [0, null], "Got back the expected way IDs");
       annotator.getAllTagsForWayId(wayIds[0], (err, tags) => {
         if (err) throw err;
         t.equal(tags._way_id,'6091729',"Got correct _way_id attribute on match");
         t.end();
       });
     });
+});
+
+test('invalid get tags parameters', (t) => {
+  try {
+    annotator.getAllTagsForWayId("invalid", (err, wayIds) => {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok("Should fail if a non-numeric way ID is supplied");
+  }
+
+  try {
+    annotator.getAllTagsForWayId(99);
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok("Should fail if a no callback is supplied");
+  }
+
+  try {
+    annotator.getAllTagsForWayId(99, 99);
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok("Should fail if second argument isn't a function");
+    t.end();
+  }
+
+
 });
 
 test('initialization failure', function(t) {
@@ -85,6 +276,32 @@ test('missing multifiles', function(t) {
   });
 });
 
+test('load invalid parameters', (t) => {
+  try {
+      segmentmap.loadCSV(1234, (err) => {
+        t.fail("Should never get here");;
+        t.end();
+      });
+      t.fail("Should never get here");;
+  }
+  catch (err) {
+    t.ok(err, "Fails if the first parameter isn't a string or array");
+  }
+
+  try {
+      segmentmap.loadCSV(1234, 1234, (err) => {
+        t.fail("Should never get here");;
+        t.end();
+      });
+      t.fail("Should never get here");;
+  }
+  catch (err) {
+    t.ok(err, "Fails if the second parameter isn't a function");
+    t.end();
+  }
+
+});
+
 test('load valid CSV', function(t) {
   segmentmap.loadCSV(
     [path.join(__dirname,'congestion/fixtures/congestion.csv'),
@@ -93,6 +310,67 @@ test('load valid CSV', function(t) {
     if (err) throw err;
     t.end();
   });
+});
+
+test('lookup with various invalid parameters', function(t) {
+  try {
+    segmentmap.getRouteSpeeds([86909066], (err, resp)=> {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if only one coordinate is passed");
+  }
+  try {
+    segmentmap.getRouteSpeeds(86909066, (err, resp)=> {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if first param isn't an array");
+  }
+
+  try {
+    segmentmap.getRouteSpeeds([86909066,86909064], 99, (err, resp)=> {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if more than 2 parameters passed");
+  }
+
+  try {
+    segmentmap.getRouteSpeeds([86909066,86909064], 99);
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if second parameter isn't a function");
+  }
+
+  try {
+    segmentmap.getRouteSpeeds([86909066,"asdfasdf"], (err, resp)=> {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if a value in the node list isn't a number");
+  }
+
+  try {
+    segmentmap.getRouteSpeeds([86909066,-86909064], 99, (err, resp)=> {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if a value in the node list is negative");
+    t.end();
+  }
+
 });
 
 test('lookup node pair', function(t) {

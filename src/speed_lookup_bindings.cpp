@@ -143,7 +143,7 @@ NAN_METHOD(SpeedLookup::getRouteSpeeds)
 {
     auto *const self = Nan::ObjectWrap::Unwrap<SpeedLookup>(info.Holder());
 
-    if (info.Length() != 2 || !info[0]->IsArray())
+    if (info.Length() != 2 || !info[0]->IsArray() || !info[1]->IsFunction())
         return Nan::ThrowTypeError("Two arguments expected: nodeIds (Array), Callback");
 
     auto callback = info[1].As<v8::Function>();
