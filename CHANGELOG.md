@@ -1,6 +1,7 @@
 # Route Annotator releases
 
 ## Unreleased
+- Fixed code coverage environment and expanded test coverage
 
 ## 0.1.0
 - Added filtering option based on a file of OSM tags
