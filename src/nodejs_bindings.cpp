@@ -294,7 +294,7 @@ NAN_METHOD(Annotator::annotateRouteFromLonLats)
 
     // Guard against empty or one coordinate for which no wayId can be assigned
     if (jsLonLats->Length() < 2)
-        return info.GetReturnValue().Set(Nan::New<v8::Array>());
+        return Nan::ThrowTypeError("At least 2 coordinates must be supplied");
 
     std::vector<point_t> coordinates(jsLonLats->Length());
 
@@ -388,7 +388,7 @@ NAN_METHOD(Annotator::getAllTagsForWayId)
         return Nan::ThrowError("No OSM data loaded");
 
     if (info.Length() != 2 || !info[0]->IsNumber() || !info[1]->IsFunction())
-        return Nan::ThrowTypeError("Array of [lon, lat] arrays and callback expected");
+        return Nan::ThrowTypeError("A numeric way ID and a callback expected");
 
     const auto wayId = Nan::To<wayid_t>(info[0]).FromJust();
 
