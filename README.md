@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/mapbox/route-annotator.svg?branch=master)](https://travis-ci.org/mapbox/route-annotator) ![CodeCov](https://codecov.io/gh/mapbox/route-annotator/branch/master/graph/badge.svg)
+[![Build Status](https://travis-ci.org/mapbox/route-annotator.svg?branch=master)](https://travis-ci.org/mapbox/route-annotator) [![CodeCov](https://codecov.io/gh/mapbox/route-annotator/branch/master/graph/badge.svg)](https://codecov.io/gh/mapbox/route-annotator/branch/master)
 
 # Route Annotator
 
