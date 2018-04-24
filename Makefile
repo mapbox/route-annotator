@@ -40,19 +40,23 @@ xcode: node_modules
 docs:
 	npm run docs
 
-npmtest:
-	@echo "Running nodejs tests..."
-	npm test
-
-test-release: release npmtest
+unit-test-release:
 	@echo "Running CXX tests..."
 	./build/Release/basic-tests -x
 	./build/Release/congestion-tests -x
 
-test-debug: debug npmtest
+unit-test-debug:
 	@echo "Running CXX tests..."
 	./build/Debug/basic-tests
 	./build/Debug/congestion-tests
+
+npmtest:
+	@echo "Running nodejs tests..."
+	npm test
+
+test-release: release unit-test-release npmtest
+
+test-debug: debug unit-test-debug npmtest
 
 test: test-release
 

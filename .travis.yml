@@ -31,6 +31,7 @@ install:
 # https://docs.travis-ci.com/user/customizing-the-build#Breaking-the-Build
 before_script:
   - npm test
+  - make test-${BUILDTYPE}
   # after successful tests, publish binaries if specified in commit message
   - ./scripts/publish.sh --toolset=${TOOLSET:-} --debug=$([ "${BUILDTYPE}" == 'debug' ] && echo "true" || echo "false")
 
@@ -102,9 +103,11 @@ matrix:
       # Overrides `install` to avoid initializing clang toolchain
       install:
         - make ${BUILDTYPE}
+        - make test-${BUILDTYPE}
       # Overrides `script` to disable publishing
       before_script:
         - npm test
+        - make test-${BUILDTYPE}
     # Coverage build
     - os: linux
       env: BUILDTYPE=debug CXXFLAGS="--coverage" LDFLAGS="--coverage"
@@ -112,6 +115,7 @@ matrix:
       # Overrides `script` to publish coverage data to codecov
       before_script:
         - ./scripts/format.sh
+        - make test-${BUILDTYPE}
         - npm run coverage
         - mason install llvm-cov ${MASON_LLVM_RELEASE}
         - mason link llvm-cov ${MASON_LLVM_RELEASE}
