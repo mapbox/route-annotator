@@ -41,8 +41,8 @@ function main() {
 function nodeListHandler(annotator) {
   return (req, res) => {
     const nodes = req.params.nodelist
-                    .split(',')
-                    .map(x => parseInt(x, 10));
+      .split(',')
+      .map(x => parseInt(x, 10));
 
     const invalid = (x) => !isFinite(x) || x === null;
 
@@ -53,22 +53,21 @@ function nodeListHandler(annotator) {
       if (err)
         return res.sendStatus(400);
 
-      var response = {"way_indexes": [], "ways_seen": []};
+      var response = { "way_indexes": [], "ways_seen": [] };
       var way_indexes = {};
 
       async.each(wayIds, (way_id, next) => {
         if (way_id === null) return next();
-          annotator.getAllTagsForWayId(way_id, (err, tags) => {
-            if (err) res.sendStatus(400);
-            var wid = tags["_way_id"];
-            if (!way_indexes.hasOwnProperty(wid)) {
-              way_indexes[wid] = Object.keys(way_indexes).length;
-              response.ways_seen.push(tags);
-            }
-            response.way_indexes.push(way_indexes[wid]);
-            next();
-          });
-        }
+        annotator.getAllTagsForWayId(way_id, (err, tags) => {
+          if (err) res.sendStatus(400);
+          var wid = tags["_way_id"];
+          if (!way_indexes.hasOwnProperty(wid)) {
+            way_indexes[wid] = Object.keys(way_indexes).length;
+            response.ways_seen.push(tags);
+          }
+          response.way_indexes.push(way_indexes[wid]);
+          next();
+        });
       }, (err, data) => {
         res.json(response);
       });
@@ -80,10 +79,10 @@ function nodeListHandler(annotator) {
 function coordListHandler(annotator) {
   return (req, res) => {
     const coordinates = req.params.coordlist
-                          .split(';')
-                          .map(lonLat => lonLat
-                                           .split(',')
-                                           .map(x => parseFloat(x)));
+      .split(';')
+      .map(lonLat => lonLat
+        .split(',')
+        .map(x => parseFloat(x)));
 
     const invalid = (x) => !isFinite(x) || x === null;
 
@@ -96,21 +95,21 @@ function coordListHandler(annotator) {
         return res.sendStatus(400);
       }
 
-      var response = {"way_indexes": [], "ways_seen": []};
+      var response = { "way_indexes": [], "ways_seen": [] };
       var way_indexes = {};
 
       async.each(wayIds, (way_id, next) => {
-          annotator.getAllTagsForWayId(way_id, (err, tags) => {
-              var wid = tags["_way_id"];
-              if (!way_indexes.hasOwnProperty(wid)) {
-                way_indexes[wid] = Object.keys(way_indexes).length;
-                response.ways_seen.push(tags);
-              }
-              response.way_indexes.push(way_indexes[wid]);
-              next();
-          });
+        annotator.getAllTagsForWayId(way_id, (err, tags) => {
+          var wid = tags["_way_id"];
+          if (!way_indexes.hasOwnProperty(wid)) {
+            way_indexes[wid] = Object.keys(way_indexes).length;
+            response.ways_seen.push(tags);
+          }
+          response.way_indexes.push(way_indexes[wid]);
+          next();
+        });
       }, (err, data) => {
-          res.json(response);
+        res.json(response);
       });
     });
   };
