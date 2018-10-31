@@ -1,6 +1,7 @@
 # Route Annotator releases
 
 ## Unreleased
+- Add support for Node 10 pre-published binaries
 
 ## 0.1.1
 - Fixed code coverage environment and expanded test coverage
