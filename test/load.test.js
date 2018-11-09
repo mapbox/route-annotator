@@ -1,7 +1,7 @@
 var test = require('tape');
 const bindings = require('../index');
 const annotator = new bindings.Annotator({ coordinates: true });
-const segmentmap = new bindings.SpeedLookup();
+const segmentmap = new bindings.SegmentSpeedLookup();
 const path = require('path');
 
 test('invalid initialization', (t) => {
@@ -231,36 +231,36 @@ test('invalid get tags parameters', (t) => {
 });
 
 test('initialization failure', function(t) {
-  t.throws(bindings.SpeedLookup, /Cannot call constructor/, "Check that lookup can't be constructed without new");
+  t.throws(bindings.SegmentSpeedLookup, /Cannot call constructor/, "Check that lookup can't be constructed without new");
   t.end();
 });
 
 test('initialization failure with parameters', function(t) {
-  t.throws(function() { var foo = new bindings.SpeedLookup("test"); }, /No types expected/, "Check that lookup can't be constructed with parameters");
+  t.throws(function() { var foo = new bindings.SegmentSpeedLookup("test"); }, /No types expected/, "Check that lookup can't be constructed with parameters");
   t.end();
 });
 
 
 test('check CSV loading', function(t) {
   t.throws(function(cb) { 
-    var foo = new bindings.SpeedLookup(); 
+    var foo = new bindings.SegmentSpeedLookup(); 
     foo.loadCSV(1,(err) => {cb(err);});
   }, /and callback expected/, "Only understands strings and arrays of strings");
 
   t.throws(function(cb) { 
-    var foo = new bindings.SpeedLookup(); 
+    var foo = new bindings.SegmentSpeedLookup(); 
     foo.loadCSV("testfile.csv");
   }, /and callback expected/, "Needs a callback function");
 
   t.throws(function(cb) { 
-    var foo = new bindings.SpeedLookup();
+    var foo = new bindings.SegmentSpeedLookup();
     foo.loadCSV([],(err) => {cb(err);});
   }, /at least one filename/, "Doesn't know what to do with an empty array");
   t.end();
 });
 
 test('missing single files', function(t) {
-  var foo = new bindings.SpeedLookup();
+  var foo = new bindings.SegmentSpeedLookup();
   foo.loadCSV("doesnotexist.csv",(err) => {
     t.ok(err, "Fails if the file does not exist");
     t.end();
@@ -268,7 +268,7 @@ test('missing single files', function(t) {
 });
 
 test('missing multifiles', function(t) {
-  var foo = new bindings.SpeedLookup();
+  var foo = new bindings.SegmentSpeedLookup();
   foo.loadCSV([path.join(__dirname,'congestion/fixtures/congestion.csv'),
                "doesnotexist.csv"],(err) => {
     t.ok(err, "Fails if any of the files in the list does not exist");
@@ -390,7 +390,7 @@ test('lookup node pair from second file', function(t) {
 });
 
 test('make sure that it works even if CSV is not loaded', function(t) {
-  var speedlookup = new bindings.SpeedLookup();
+  var speedlookup = new bindings.SegmentSpeedLookup();
   speedlookup.getRouteSpeeds([90,91,92,93], (err, resp)=> {
     if (err) { console.log(err); throw err; }
     t.ok(resp, "Return results even if CSV is not loaded");
@@ -399,7 +399,7 @@ test('make sure that it works even if CSV is not loaded', function(t) {
 });
 
 test('dont load CSV and see if you get the correct response (4 INVALID_SPEEDs)', function(t) {
-  var speedlookup = new bindings.SpeedLookup();
+  var speedlookup = new bindings.SegmentSpeedLookup();
   speedlookup.getRouteSpeeds([90,91,92,93], (err, resp)=> {
     if (err) { console.log(err); throw err; }
     t.same(resp, [ 4294967295, 4294967295, 4294967295 ], "Verify expected speed results");
