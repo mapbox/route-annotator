@@ -46,7 +46,7 @@ To run the C++ tests:
 
 ## Usage
 
-This library contains two main modules: `Annotator` and `SpeedLookup`
+This library contains three main modules: `Annotator`, `SegmentSpeedLookup`, and `WaySpeedLookup`
 
 ### Annotator
 
@@ -88,20 +88,42 @@ taglookup.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
 
 ```
 
-### SpeedLookup
+### SegmentSpeedLookup
 
-The `SpeedLookup()` object is for loading segment speed information from CSV files, then looking it up quickly from an in-memory hashtable.
+The `SegmentSpeedLookup()` object is for loading segment speed information from CSV files, then looking it up quickly from an in-memory hashtable.
 
 **Example:**
 ```
-var speedlookup = new (require('route_annotator')).SpeedLookup();
+var segmentspeedlookup = new (require('route_annotator')).SegmentSpeedLookup();
 
 // Loads example.csv, then looks up the pairs 123-124, 124-125, 125-126
 // and prints the speeds for those segments (3 values) as comma-separated
 // data
-speedlookup.loadCSV("example.csv", (err) => {
+segmentspeedlookup.loadCSV("example.csv", (err) => {
   if (err) throw err;
-  speedlookup.getRouteSpeeds([123,124,125,126],(err,results) => {
+  segmentspeedlookup.getRouteSpeeds([123,124,125,126],(err,results) => {
+    if (err) throw err;
+    console.log(results.join(","));
+  });
+});
+```
+
+The `loadCSV` method can also be passed an array of filenames.
+
+### WaySpeedLookup
+
+The `WaySpeedLookup()` object is for loading way speed information from CSV files, then looking it up quickly from an in-memory hashtable.
+
+**Example:**
+```
+var wayspeedlookup = new (require('route_annotator')).WaySpeedLookup();
+
+// Loads example.csv, then looks up the ways 1111,2222,3333,4444
+// and prints the speeds for those ways as comma-separated
+// data
+wayspeedlookup.loadCSV("example.csv", (err) => {
+  if (err) throw err;
+  wayspeedlookup.getRouteSpeeds([1111,2222,3333,4444],(err,results) => {
     if (err) throw err;
     console.log(results.join(","));
   });
