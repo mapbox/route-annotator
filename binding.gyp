@@ -149,8 +149,7 @@
         './test/basic/annotator.cpp',
         './test/basic/database.cpp',
         './test/basic/extractor.cpp',
-        './test/basic/rtree.cpp',
-        './test/basic/hashmap.cpp'
+        './test/basic/rtree.cpp'
       ],
       'include_dirs' : [
         'src/'
