@@ -1,6 +1,6 @@
 #include "way_speed_map.hpp"
-#include <sparsepp/spp.h>
 #include <cmath>
+#include <sparsepp/spp.h>
 
 #include <boost/fusion/adapted/std_pair.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
@@ -16,7 +16,8 @@ WaySpeedMap::WaySpeedMap(const std::string &input_filename) { loadCSV(input_file
 
 WaySpeedMap::WaySpeedMap(const std::vector<std::string> &input_filenames)
 {
-    for (const auto &input_filename : input_filenames) {
+    for (const auto &input_filename : input_filenames)
+    {
         loadCSV(input_filename);
     }
 }
@@ -29,13 +30,14 @@ void WaySpeedMap::loadCSV(const std::string &input_filename)
     boost::iostreams::mapped_file_source mmap(input_filename);
     auto first = mmap.begin(), last = mmap.end();
     qi::parse(first, last,
-              -((qi::uint_ >> ',' >> ("mph" >> qi::attr(true) | "kph" >> qi::attr(false) |
-                  "" >> qi::attr(false)) >> ',' >>
-                 qi::uint_)[ph::bind(&WaySpeedMap::add, this, qi::_1, qi::_2, qi::_3)] %
+              -((qi::uint_ >> ',' >>
+                 ("mph" >> qi::attr(true) | "kph" >> qi::attr(false) | "" >> qi::attr(false)) >>
+                 ',' >> qi::uint_)[ph::bind(&WaySpeedMap::add, this, qi::_1, qi::_2, qi::_3)] %
                 qi::eol) >>
                   *qi::eol);
 
-    if (first != last) {
+    if (first != last)
+    {
         auto bol = first - 1;
         while (bol > mmap.begin() && *bol != '\n')
             --bol;
@@ -48,40 +50,40 @@ void WaySpeedMap::loadCSV(const std::string &input_filename)
 
 void WaySpeedMap::add(const wayid_t &way, const bool &mph, const segment_speed_t &speed)
 {
-  if (mph)
-    annotations[way] = std::round(speed * 1.609);
-  else annotations[way] = speed;
+    if (mph)
+        annotations[way] = std::round(speed * 1.609);
+    else
+        annotations[way] = speed;
 }
 
-bool WaySpeedMap::hasKey(const wayid_t &way) const
-{
-    return (annotations.count(way) > 0);
-}
+bool WaySpeedMap::hasKey(const wayid_t &way) const { return (annotations.count(way) > 0); }
 
 segment_speed_t WaySpeedMap::getValue(const wayid_t &way) const
 {
     // Save the result of find so that we don't need to repeat the lookup to get the value
     auto result = annotations.find(way);
     if (result == annotations.end())
-        throw std::runtime_error("Way ID " + std::to_string(way) + " doesn't exist in the hashmap.");
+        throw std::runtime_error("Way ID " + std::to_string(way) +
+                                 " doesn't exist in the hashmap.");
 
     // Use the already retrieved value as the result
     return result->second;
 }
 
-std::vector<segment_speed_t>
-WaySpeedMap::getValues(const std::vector<wayid_t> &route) const
+std::vector<segment_speed_t> WaySpeedMap::getValues(const std::vector<wayid_t> &route) const
 {
     std::vector<wayid_t> speeds;
     if (route.size() < 1)
         throw std::runtime_error("Way Array should have at least 1 way ID for getValues method.");
 
     speeds.resize(route.size());
-    for (std::size_t way_index = 0; way_index < speeds.size(); ++way_index) {
+    for (std::size_t way_index = 0; way_index < speeds.size(); ++way_index)
+    {
         auto result = annotations.find(route[way_index]);
         if (result == annotations.end())
             speeds[way_index] = INVALID_SPEED;
-        else speeds[way_index] = result->second;
+        else
+            speeds[way_index] = result->second;
     }
     return speeds;
 }
