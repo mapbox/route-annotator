@@ -565,7 +565,7 @@ test('WaySpeedLookup: lookup with various invalid parameters', function(t) {
   }
 
   try {
-	  waymap.getRouteSpeeds([15665879], 30, (err, resp)=> {
+	  waymap.getRouteSpeeds([301595694], 30, (err, resp)=> {
       t.fail("Should never get here");
     });
     t.fail("Should never get here");
@@ -575,7 +575,7 @@ test('WaySpeedLookup: lookup with various invalid parameters', function(t) {
   }
 
   try {
-	  waymap.getRouteSpeeds([15665879], 30);
+	  waymap.getRouteSpeeds([301595694], 30);
     t.fail("Should never get here");
   }
   catch (err) {
@@ -583,7 +583,7 @@ test('WaySpeedLookup: lookup with various invalid parameters', function(t) {
   }
 
   try {
-	  waymap.getRouteSpeeds([15665879,"asdfasdf"], (err, resp)=> {
+	  waymap.getRouteSpeeds([301595694,"asdfasdf"], (err, resp)=> {
       t.fail("Should never get here");
     });
     t.fail("Should never get here");
@@ -593,7 +593,7 @@ test('WaySpeedLookup: lookup with various invalid parameters', function(t) {
   }
 
   try {
-	  waymap.getRouteSpeeds([15665879,-15665879], 30, (err, resp)=> {
+	  waymap.getRouteSpeeds([301595694,-301595694], 30, (err, resp)=> {
       t.fail("Should never get here");
     });
     t.fail("Should never get here");
@@ -605,18 +605,18 @@ test('WaySpeedLookup: lookup with various invalid parameters', function(t) {
 
 });
 
-test('WaySpeedLookup: lookup node pair', function(t) {
-	waymap.getRouteSpeeds([15665879,286508200,11750872,999], (err, resp)=> {
+test('WaySpeedLookup: lookup ways', function(t) {
+	waymap.getRouteSpeeds([301595694,165499294,106817824,999], (err, resp)=> {
     if (err) { console.log(err); throw err; }
-    t.same(resp, [30,5,50,4294967295], "Verify expected speed results");
+    t.same(resp, [30,70,113,4294967295], "Verify expected speed results");
     t.end();
   });
 });
 
-test('WaySpeedLookup: lookup node pair from second file', function(t) {
-	waymap.getRouteSpeeds([6697274,11714049,6663351,6670232], (err, resp)=> {
+test('WaySpeedLookup: lookup ways from second file', function(t) {
+	waymap.getRouteSpeeds([45619838,173681583,171537086,999], (err, resp)=> {
     if (err) { console.log(err); throw err; }
-    t.same(resp, [60,32,30,10], "Verify expected speed results");
+    t.same(resp, [65,19,97,4294967295], "Verify expected speed results");
     t.end();
   });
 });
