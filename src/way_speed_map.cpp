@@ -30,7 +30,7 @@ void WaySpeedMap::loadCSV(const std::string &input_filename)
     boost::iostreams::mapped_file_source mmap(input_filename);
     auto first = mmap.begin(), last = mmap.end();
     qi::parse(first, last,
-              -((qi::uint_ >> ',' >> (+(qi::char_ - ',')) >> ',' >>
+              -((qi::uint_ >> ',' >> ((+(qi::char_ - ',')) | "" >> qi::lit("")) >> ',' >>
                  ("mph" >> qi::attr(true) | "kph" >> qi::attr(false) | "" >> qi::attr(false)) >>
                  ',' >> qi::uint_)[ph::bind(&WaySpeedMap::add, this, qi::_1, qi::_3, qi::_4)] %
                 qi::eol) >>
