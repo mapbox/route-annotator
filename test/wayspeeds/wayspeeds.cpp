@@ -13,7 +13,7 @@ BOOST_AUTO_TEST_CASE(way_speeds_test_basic)
 {
     WaySpeedMap map("test/wayspeeds/fixtures/way_speeds.csv");
 
-    BOOST_CHECK_EQUAL(map.getValue(286508206), 5);
+    BOOST_CHECK_EQUAL(map.getValue(106817824), 113);
     BOOST_CHECK_EQUAL(map.hasKey(100), false);
 }
 
@@ -21,20 +21,20 @@ BOOST_AUTO_TEST_CASE(way_speeds_test_many)
 {
     WaySpeedMap map("test/wayspeeds/fixtures/way_speeds.csv");
 
-    BOOST_CHECK_EQUAL(map.getValue(11750872), 50);
-    BOOST_CHECK_EQUAL(map.getValue(286508200), 5);
-    BOOST_CHECK_EQUAL(map.getValue(11753880), 40);
-    BOOST_CHECK_EQUAL(map.getValue(15591960), 30);
-    BOOST_CHECK_EQUAL(map.getValue(563386869), 64);
-    BOOST_CHECK_EQUAL(map.getValue(11736165), 50);
+    BOOST_CHECK_EQUAL(map.getValue(106817824), 113);
+    BOOST_CHECK_EQUAL(map.getValue(231738435), 64);
+    BOOST_CHECK_EQUAL(map.getValue(406215748), 48);
+    BOOST_CHECK_EQUAL(map.getValue(301595694), 30);
+    BOOST_CHECK_EQUAL(map.getValue(165499294), 70);
+    BOOST_CHECK_EQUAL(map.getValue(49800696), 88);
 }
 
 BOOST_AUTO_TEST_CASE(way_speeds_test_get_values)
 {
     WaySpeedMap map("test/wayspeeds/fixtures/way_speeds.csv");
 
-    std::vector<wayid_t> ways{11750872, 286508200, 11753880, 15591960, 563386869, 11736165};
-    std::vector<segment_speed_t> speeds{50, 5, 40, 30, 64, 50};
+    std::vector<wayid_t> ways{106817824, 231738435, 406215748, 301595694, 165499294, 49800696};
+    std::vector<segment_speed_t> speeds{113, 64, 48, 30, 70, 88};
     std::vector<segment_speed_t> response = map.getValues(ways);
     BOOST_CHECK_EQUAL_COLLECTIONS(response.begin(), response.end(), speeds.begin(), speeds.end());
 }
@@ -49,13 +49,8 @@ BOOST_AUTO_TEST_CASE(way_speeds_load_multiple)
                                       "test/wayspeeds/fixtures/way_speeds2.csv"};
     WaySpeedMap map(paths);
 
-    ways = {6697274, 97518240, 6692620, 97518240, 6688117, 11714049};
-    expected = {60, 31, 30, 31, 72, 32};
-    actual = map.getValues(ways);
-    BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
-
-    ways = {11750872, 286508200, 11753880, 15591960, 563386869, 11736165};
-    expected = {50, 5, 40, 30, 64, 50};
+    ways = {106817824, 231738435, 173681583, 45619838, 51369345, 171537086};
+    expected = {113, 64, 19, 65, 129, 97};
     actual = map.getValues(ways);
     BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
 }
@@ -69,19 +64,13 @@ BOOST_AUTO_TEST_CASE(way_speeds_load_incremental)
     std::vector<std::string> paths = {"test/wayspeeds/fixtures/way_speeds.csv"};
     WaySpeedMap map(paths);
 
-    ways = {11750872, 286508200, 11753880, 15591960, 563386869, 11736165};
-    expected = {50, 5, 40, 30, 64, 50};
+    ways = {106817824, 231738435, 173681583, 45619838, 51369345, 171537086};
+    expected = {113, 64, 4294967295, 4294967295, 4294967295, 113};
     actual = map.getValues(ways);
-    BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
-
-    ways = {6697274, 97518240, 6692620, 97518240, 11714049, 6688117};
-    expected = {INVALID_SPEED, INVALID_SPEED, INVALID_SPEED, INVALID_SPEED, 30, INVALID_SPEED};
-    actual = map.getValues(ways);
-
     BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
 
     map.loadCSV("test/wayspeeds/fixtures/way_speeds2.csv");
-    expected = {60, 31, 30, 31, 32, 72};
+    expected = {113, 64, 19, 65, 129, 97};
     actual = map.getValues(ways);
 
     BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
@@ -155,12 +144,12 @@ BOOST_AUTO_TEST_CASE(way_speeds_test_has_key)
 {
     WaySpeedMap map("test/wayspeeds/fixtures/way_speeds.csv");
 
-    BOOST_CHECK_EQUAL(map.hasKey(11736165), true);
+    BOOST_CHECK_EQUAL(map.hasKey(106817824), true);
     BOOST_CHECK_EQUAL(map.hasKey(1), false);
 
-    BOOST_CHECK_EQUAL(map.hasKey(6697274),false);
+    BOOST_CHECK_EQUAL(map.hasKey(51369345),false);
     map.loadCSV("test/wayspeeds/fixtures/way_speeds2.csv");
-    BOOST_CHECK_EQUAL(map.hasKey(6697274),true);
+    BOOST_CHECK_EQUAL(map.hasKey(51369345),true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
