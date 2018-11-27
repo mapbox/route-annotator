@@ -1,11 +1,11 @@
-#include "speed_lookup_bindings.hpp"
+#include "way_bindings.hpp"
 #include "types.hpp"
 #include <algorithm>
 #include <vector>
 
-NAN_MODULE_INIT(SpeedLookup::Init)
+NAN_MODULE_INIT(WaySpeedLookup::Init)
 {
-    const auto whoami = Nan::New("SpeedLookup").ToLocalChecked();
+    const auto whoami = Nan::New("WaySpeedLookup").ToLocalChecked();
 
     auto fnTp = Nan::New<v8::FunctionTemplate>(New);
     fnTp->SetClassName(whoami);
@@ -20,14 +20,14 @@ NAN_MODULE_INIT(SpeedLookup::Init)
     Nan::Set(target, whoami, fn);
 }
 
-NAN_METHOD(SpeedLookup::New)
+NAN_METHOD(WaySpeedLookup::New)
 {
     if (info.Length() != 0)
         return Nan::ThrowTypeError("No types expected");
 
     if (info.IsConstructCall())
     {
-        auto *const self = new SpeedLookup;
+        auto *const self = new WaySpeedLookup;
         self->Wrap(info.This());
         info.GetReturnValue().Set(info.This());
     }
@@ -44,7 +44,7 @@ NAN_METHOD(SpeedLookup::New)
  * @param {string} path the path to the CSV file to load
  * @param {function} callback function to call when the file is done loading
  */
-NAN_METHOD(SpeedLookup::loadCSV)
+NAN_METHOD(WaySpeedLookup::loadCSV)
 {
     // In case we already loaded a dataset, this function will transactionally swap in a new one
     if (info.Length() != 2 || (!info[0]->IsString() && !info[0]->IsArray()) ||
@@ -98,7 +98,7 @@ NAN_METHOD(SpeedLookup::loadCSV)
         {
             try
             {
-                map = std::make_shared<SegmentSpeedMap>();
+                map = std::make_shared<WaySpeedMap>();
                 for (const auto &path : paths)
                 {
                     map->loadCSV(path);
@@ -114,7 +114,7 @@ NAN_METHOD(SpeedLookup::loadCSV)
         {
             Nan::HandleScope scope;
             auto self = GetFromPersistent("self")->ToObject();
-            auto *unwrapped = Nan::ObjectWrap::Unwrap<SpeedLookup>(self);
+            auto *unwrapped = Nan::ObjectWrap::Unwrap<WaySpeedLookup>(self);
             swap(unwrapped->datamap, map);
             const constexpr auto argc = 1u;
             v8::Local<v8::Value> argv[argc] = {Nan::Null()};
@@ -122,7 +122,7 @@ NAN_METHOD(SpeedLookup::loadCSV)
         }
 
         std::vector<std::string> paths;
-        std::shared_ptr<SegmentSpeedMap> map;
+        std::shared_ptr<WaySpeedMap> map;
     };
 
     auto *callback = new Nan::Callback{info[1].As<v8::Function>()};
@@ -130,54 +130,54 @@ NAN_METHOD(SpeedLookup::loadCSV)
 }
 
 /**
- * Fetches the values in the hashtable for pairs of nodes
+ * Fetches the values in the hashtable for ways
  * @function getRouteSpeeds
- * @param {array} nodes an array of node IDs to look up in pairs
+ * @param {array} ways an array of ways IDs to look up
  * @param {function} callback receives the results of the search as an array
  * @example
  *   container.getRouteSpeeds([23,43,12],(err,result) => {
  *      console.log(result);
  *   });
  */
-NAN_METHOD(SpeedLookup::getRouteSpeeds)
+NAN_METHOD(WaySpeedLookup::getRouteSpeeds)
 {
-    auto *const self = Nan::ObjectWrap::Unwrap<SpeedLookup>(info.Holder());
+    auto *const self = Nan::ObjectWrap::Unwrap<WaySpeedLookup>(info.Holder());
 
     if (info.Length() != 2 || !info[0]->IsArray() || !info[1]->IsFunction())
-        return Nan::ThrowTypeError("Two arguments expected: nodeIds (Array), Callback");
+        return Nan::ThrowTypeError("Two arguments expected: waysIds (Array), Callback");
 
     auto callback = info[1].As<v8::Function>();
-    const auto jsNodeIds = info[0].As<v8::Array>();
+    const auto jsWayIds = info[0].As<v8::Array>();
     // Guard against empty or one nodeId for which no wayId can be assigned
-    if (jsNodeIds->Length() < 2)
+    if (jsWayIds->Length() < 1)
         return Nan::ThrowTypeError(
-            "getRouteSpeeds expects 'nodeIds' (Array(Number)) of at least length 2");
+            "getRouteSpeeds expects 'wayIds' (Array(Number)) of at least length 1");
 
-    std::vector<external_nodeid_t> nodes_to_query(jsNodeIds->Length());
+    std::vector<wayid_t> ways_to_query(jsWayIds->Length());
 
-    for (uint32_t i = 0; i < jsNodeIds->Length(); ++i)
+    for (uint32_t i = 0; i < jsWayIds->Length(); ++i)
     {
-        v8::Local<v8::Value> jsNodeId = jsNodeIds->Get(i);
-        if (!jsNodeId->IsNumber())
-            return Nan::ThrowTypeError("NodeIds must be an array of numbers");
-        auto signedNodeId = Nan::To<int64_t>(jsNodeId).FromJust();
-        if (signedNodeId < 0)
+        v8::Local<v8::Value> jsWayId = jsWayIds->Get(i);
+        if (!jsWayId->IsNumber())
+            return Nan::ThrowTypeError("WayIds must be an array of numbers");
+        auto signedWayId = Nan::To<int32_t>(jsWayId).FromJust();
+        if (signedWayId < 0)
             return Nan::ThrowTypeError(
-                "getRouteSpeeds expects 'nodeId' within (Array(Number))to be non-negative");
+                "getRouteSpeeds expects 'wayId' within (Array(Number))to be non-negative");
 
-        external_nodeid_t nodeId = static_cast<external_nodeid_t>(signedNodeId);
-        nodes_to_query[i] = nodeId;
+        wayid_t wayId = static_cast<wayid_t>(signedWayId);
+        ways_to_query[i] = wayId;
     }
 
     struct Worker final : Nan::AsyncWorker
     {
         using Base = Nan::AsyncWorker;
 
-        Worker(std::shared_ptr<SegmentSpeedMap> datamap_,
+        Worker(std::shared_ptr<WaySpeedMap> datamap_,
                Nan::Callback *callback,
-               std::vector<external_nodeid_t> nodeIds)
-            : Base(callback, "annotator:speed.annotatefromnodeids"), datamap{datamap_},
-              nodeIds(std::move(nodeIds))
+               std::vector<wayid_t> wayIds)
+            : Base(callback, "annotator:speed.annotatefromwayids"), datamap{datamap_},
+              wayIds(std::move(wayIds))
         {
         }
 
@@ -185,11 +185,11 @@ NAN_METHOD(SpeedLookup::getRouteSpeeds)
         {
             if (datamap)
             {
-                result_annotations = datamap->getValues(nodeIds);
+                result_annotations = datamap->getValues(wayIds);
             }
             else
             {
-                result_annotations.resize(nodeIds.size() - 1);
+                result_annotations.resize(wayIds.size());
                 std::fill(result_annotations.begin(), result_annotations.end(), INVALID_SPEED);
             }
         }
@@ -212,16 +212,16 @@ NAN_METHOD(SpeedLookup::getRouteSpeeds)
             callback->Call(argc, argv, async_resource);
         }
 
-        std::shared_ptr<SegmentSpeedMap> datamap;
-        std::vector<external_nodeid_t> nodeIds;
+        std::shared_ptr<WaySpeedMap> datamap;
+        std::vector<wayid_t> wayIds;
         std::vector<segment_speed_t> result_annotations;
     };
 
     Nan::AsyncQueueWorker(
-        new Worker{self->datamap, new Nan::Callback{callback}, std::move(nodes_to_query)});
+        new Worker{self->datamap, new Nan::Callback{callback}, std::move(ways_to_query)});
 }
 
-Nan::Persistent<v8::Function> &SpeedLookup::constructor()
+Nan::Persistent<v8::Function> &WaySpeedLookup::constructor()
 {
     static Nan::Persistent<v8::Function> init;
     return init;

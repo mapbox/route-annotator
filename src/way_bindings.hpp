@@ -2,9 +2,9 @@
 
 #include <nan.h>
 
-#include "segment_speed_map.hpp"
+#include "way_speed_map.hpp"
 
-class SpeedLookup : public Nan::ObjectWrap
+class WaySpeedLookup : public Nan::ObjectWrap
 {
   public:
     static NAN_MODULE_INIT(Init);
@@ -18,5 +18,5 @@ class SpeedLookup : public Nan::ObjectWrap
 
     static Nan::Persistent<v8::Function> &constructor(); // CPP Land
 
-    std::shared_ptr<SegmentSpeedMap> datamap; // if you want async call
+    std::shared_ptr<WaySpeedMap> datamap; // if you want async call
 };

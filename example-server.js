@@ -24,8 +24,8 @@ function main() {
 
   const annotator = new bindings.Annotator();
 
-  app.get('/nodelist/:nodelist', nodeListHandler(annotator));
   app.get('/coordlist/:coordlist', coordListHandler(annotator));
+  app.get('/nodelist/:nodelist', nodeListHandler(annotator));
 
   annotator.loadOSMExtract(osmFile, tagFile, (err) => {
     if (err)
@@ -68,7 +68,6 @@ function nodeListHandler(annotator) {
             response.way_indexes.push(way_indexes[wid]);
             next();
           });
-        }
       }, (err, data) => {
         res.json(response);
       });
