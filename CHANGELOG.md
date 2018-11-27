@@ -4,6 +4,7 @@
 
 ## 0.2.0
 - Implemented a key-value lookup service that can be used for fast in-memory lookup of speed data for wayids.
+- Refactored existing code.  speed_lookup_bindings -> segment_bindings
 
 ## 0.1.1
 - Fixed code coverage environment and expanded test coverage
