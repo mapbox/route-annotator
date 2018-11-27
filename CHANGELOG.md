@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.2.0
+- Implemented a key-value lookup service that can be used for fast in-memory lookup of speed data for wayids.
+
 ## 0.1.1
 - Fixed code coverage environment and expanded test coverage
 - Add support for Node 8 pre-published binaries
