@@ -136,6 +136,8 @@ The `loadCSV` method can also be passed an array of filenames.
 
 ### Example HTTP server
 
+This will not use a tag file.
+
 ```
 npm install
 curl --remote-name http://download.geofabrik.de/europe/monaco-latest.osm.pbf
