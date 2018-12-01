@@ -417,8 +417,6 @@ NAN_METHOD(Annotator::getAllTagsForWayId)
                           Nan::New(std::cref(value)).ToLocalChecked());
             }
 
-            std::cout << "nb " << wayId << std::endl;
-
             tags->Set(Nan::New("_way_id").ToLocalChecked(),
                       Nan::New(std::to_string(self.annotator->get_external_way_id(wayId)))
                           .ToLocalChecked());
