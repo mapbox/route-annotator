@@ -118,5 +118,7 @@ tagrange_t RouteAnnotator::get_tag_range(const wayid_t way_id) { return db.way_t
 
 wayid_t RouteAnnotator::get_external_way_id(const wayid_t way_id)
 {
+    std::cout << "get " << db.internal_to_external_way_id_map[way_id] << std::endl;
+
     return db.internal_to_external_way_id_map[way_id];
 }
