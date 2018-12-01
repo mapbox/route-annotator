@@ -150,7 +150,16 @@ bool Extractor::FilterWay(const osmium::Way &way)
                 return true;
             }
         }
-        return false;
+        // if tag is not found, filter by certain highway types by default
+        const char *highway = way.tags().get_value_by_key("highway");
+        std::vector<const char *> highway_types = {
+            "motorway",     "motorway_link", "trunk",          "trunk_link", "primary",
+            "primary_link", "secondary",     "secondary_link", "tertiary",   "tertiary_link",
+            "residential",  "living_street", "unclassified",   "service",    "ferry",
+            "movable",      "shuttle_train", "default"};
+        return highway &&
+               std::any_of(highway_types.begin(), highway_types.end(),
+                           [&highway](const auto &way) { return std::strcmp(highway, way) == 0; });
     }
 }
 
