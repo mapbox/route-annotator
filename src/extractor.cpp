@@ -187,8 +187,8 @@ void Extractor::way(const osmium::Way &way)
         db.internal_to_external_way_id_map.push_back(way.id());
 
         if (way.id() == 149731570)
-          std::cout << "import " << way_id << " " << db.internal_to_external_way_id_map.size() << std::endl;
-
+            std::cout << "import " << way_id << " " << db.internal_to_external_way_id_map.size()
+                      << std::endl;
 
         // This iterates over each pair of nodes.
         // Given the nodes 1,2,3,4,5,6
