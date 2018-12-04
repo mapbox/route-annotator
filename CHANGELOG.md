@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.2.1
+- If tag is not found, filter by certain highway types by default.  (i.e., always add routable ways even though the requested tags don't exist.)
+
 ## 0.2.0
 - Implemented a key-value lookup service that can be used for fast in-memory lookup of speed data for wayids.
 - Refactored existing code.  speed_lookup_bindings -> segment_bindings
