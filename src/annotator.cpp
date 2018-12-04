@@ -116,7 +116,7 @@ std::string RouteAnnotator::get_tag_value(const std::size_t index)
 
 tagrange_t RouteAnnotator::get_tag_range(const wayid_t way_id) { return db.way_tag_ranges[way_id]; }
 
-std::uint64_t RouteAnnotator::get_external_way_id(const wayid_t way_id)
+wayid_t RouteAnnotator::get_external_way_id(const wayid_t way_id)
 {
     return db.internal_to_external_way_id_map[way_id];
 }
