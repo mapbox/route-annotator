@@ -29,9 +29,16 @@ void SegmentSpeedMap::loadCSV(const std::string &input_filename)
     boost::iostreams::mapped_file_source mmap(input_filename);
     auto first = mmap.begin(), last = mmap.end();
     qi::parse(first, last,
-              -((qi::ulong_long >> ',' >> qi::ulong_long >> ',' >>
-                 qi::uint_)[ph::bind(&SegmentSpeedMap::add, this, qi::_1, qi::_2, qi::_3)] %
-                qi::eol) >>
+              (
+                  // parse data that does not have mph or kph data
+                  ((qi::ulong_long >> ',' >> qi::ulong_long >> ',' >>
+                    qi::uint_)[ph::bind(&SegmentSpeedMap::add, this, qi::_1, qi::_2, qi::_3)]) |
+                  // if the above fails, try to parse data checking for mph or kph.
+                  ((qi::ulong_long >> ',' >> qi::ulong_long >> ',' >>
+                    ("mph" >> qi::attr(true) | "kph" >> qi::attr(false) | "" >> qi::attr(false)) >>
+                    ',' >> qi::uint_)[ph::bind(&SegmentSpeedMap::add_with_unit, this, qi::_1,
+                                               qi::_2, qi::_4, qi::_3)])) %
+                      qi::eol >>
                   *qi::eol);
 
     if (first != last)
@@ -44,6 +51,17 @@ void SegmentSpeedMap::loadCSV(const std::string &input_filename)
                                  std::to_string(line_number) + ": " +
                                  std::string(bol + 1, std::find(first, last, '\n')));
     }
+}
+
+void SegmentSpeedMap::add_with_unit(const external_nodeid_t &from,
+                                    const external_nodeid_t &to,
+                                    const segment_speed_t &speed,
+                                    const bool &mph)
+{
+    if (mph)
+        annotations[Segment(from, to)] = std::round(speed * 1.609);
+    else
+        annotations[Segment(from, to)] = speed;
 }
 
 void SegmentSpeedMap::add(const external_nodeid_t &from,

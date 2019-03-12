@@ -68,6 +68,14 @@ class SegmentSpeedMap
     /**
      * Adds a single to/from pair value
      */
+    inline void add_with_unit(const external_nodeid_t &from,
+                              const external_nodeid_t &to,
+                              const segment_speed_t &speed,
+                              const bool &mph);
+
+    /**
+     * Adds a single to/from pair value
+     */
     inline void
     add(const external_nodeid_t &from, const external_nodeid_t &to, const segment_speed_t &speed);
 
