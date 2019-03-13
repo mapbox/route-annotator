@@ -51,26 +51,26 @@ void WaySpeedMap::loadCSV(const std::string &input_filename)
 void WaySpeedMap::add(const wayid_t &way, const bool &mph, const std::uint32_t &speed)
 {
 
-  if (mph)
-      {
-          std::uint32_t s = std::round(speed * 1.609);
+    if (mph)
+    {
+        std::uint32_t s = std::round(speed * 1.609);
 
-          if (s > INVALID_SPEED - 1)
-          {
-              throw std::runtime_error("CSV parsing failed.  Way: " + std::to_string(way) +
-                                       " Speed: " + std::to_string(s));
-          }
-          annotations[way] = s;
-      }
-      else
-      {
-          if (speed > INVALID_SPEED - 1)
-          {
-              throw std::runtime_error("CSV parsing failed.  From Node: " + std::to_string(way) +
-                                       " Speed: " +std::to_string(speed));
-          }
-          annotations[way] = speed;
-      }
+        if (s > INVALID_SPEED - 1)
+        {
+            throw std::runtime_error("CSV parsing failed.  Way: " + std::to_string(way) +
+                                     " Speed: " + std::to_string(s));
+        }
+        annotations[way] = s;
+    }
+    else
+    {
+        if (speed > INVALID_SPEED - 1)
+        {
+            throw std::runtime_error("CSV parsing failed.  From Node: " + std::to_string(way) +
+                                     " Speed: " + std::to_string(speed));
+        }
+        annotations[way] = speed;
+    }
 }
 
 bool WaySpeedMap::hasKey(const wayid_t &way) const { return (annotations.count(way) > 0); }
