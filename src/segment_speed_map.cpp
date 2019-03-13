@@ -55,19 +55,45 @@ void SegmentSpeedMap::loadCSV(const std::string &input_filename)
 
 void SegmentSpeedMap::add_with_unit(const external_nodeid_t &from,
                                     const external_nodeid_t &to,
-                                    const segment_speed_t &speed,
+                                    const uint32_t &speed,
                                     const bool &mph)
 {
     if (mph)
-        annotations[Segment(from, to)] = std::round(speed * 1.609);
+    {
+        std::uint32_t s = std::round(speed * 1.609);
+
+        if (s > INVALID_SPEED - 1)
+        {
+            throw std::runtime_error("CSV parsing failed.  From Node: " + std::to_string(from) +
+                                     " To Node: " + std::to_string(to) + " Speed: " +
+                                     std::to_string(s));
+        }
+        annotations[Segment(from, to)] = s;
+    }
     else
+    {
+
+        if (speed > INVALID_SPEED - 1)
+        {
+            throw std::runtime_error("CSV parsing failed.  From Node: " + std::to_string(from) +
+                                     " To Node: " + std::to_string(to) + " Speed: " +
+                                     std::to_string(speed));
+        }
         annotations[Segment(from, to)] = speed;
+    }
 }
 
 void SegmentSpeedMap::add(const external_nodeid_t &from,
                           const external_nodeid_t &to,
-                          const segment_speed_t &speed)
+                          const std::uint32_t &speed)
 {
+    if (speed > INVALID_SPEED - 1)
+    {
+        throw std::runtime_error("CSV parsing failed.  From Node: " + std::to_string(from) +
+                                 " To Node: " + std::to_string(to) + " Speed: " +
+                                 std::to_string(speed));
+    }
+
     annotations[Segment(from, to)] = speed;
 }
 
