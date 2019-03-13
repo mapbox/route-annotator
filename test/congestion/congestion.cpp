@@ -29,18 +29,18 @@ BOOST_AUTO_TEST_CASE(congestion_test_many)
     BOOST_CHECK_EQUAL(map.getValue(86622998, 86623322), 88);
     BOOST_CHECK_EQUAL(map.getValue(86909074, 86909072), 79);
     BOOST_CHECK_EQUAL(map.getValue(297977101, 312122762), 5);
-    BOOST_CHECK_EQUAL(map.getValue(69395079,69402983), 23);
-    BOOST_CHECK_EQUAL(map.getValue(3860306483,1362215135), 6);
-    BOOST_CHECK_EQUAL(map.getValue(1362215135,297976455), 10);
-
+    BOOST_CHECK_EQUAL(map.getValue(69395079, 69402983), 23);
+    BOOST_CHECK_EQUAL(map.getValue(3860306483, 1362215135), 6);
+    BOOST_CHECK_EQUAL(map.getValue(1362215135, 297976455), 10);
 }
 
 BOOST_AUTO_TEST_CASE(congestion_test_get_values)
 {
     SegmentSpeedMap map("test/congestion/fixtures/congestion.csv");
 
-    std::vector<external_nodeid_t> nodes{86909055, 86909053, 86909050, 86909053, 86909055, 3860306483, 1362215135, 297976455};
-    std::vector<segment_speed_t> speeds{81, 81, 81, 81,INVALID_SPEED,6,10};
+    std::vector<external_nodeid_t> nodes{86909055, 86909053,   86909050,   86909053,
+                                         86909055, 3860306483, 1362215135, 297976455};
+    std::vector<segment_speed_t> speeds{81, 81, 81, 81, INVALID_SPEED, 6, 10};
     std::vector<segment_speed_t> response = map.getValues(nodes);
     BOOST_CHECK_EQUAL_COLLECTIONS(response.begin(), response.end(), speeds.begin(), speeds.end());
 }
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(congestion_load_multiple)
     SegmentSpeedMap map(paths);
 
     nodes = {86909055, 86909053, 86909050, 86909053, 86909055, 3860306483, 1362215135, 297976455};
-    expected = {81, 81, 81, 81,INVALID_SPEED,6,10};
+    expected = {81, 81, 81, 81, INVALID_SPEED, 6, 10};
     actual = map.getValues(nodes);
     BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
 
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(congestion_load_incremental)
     SegmentSpeedMap map(paths);
 
     nodes = {86909055, 86909053, 86909050, 86909053, 86909055, 3860306483, 1362215135, 297976455};
-    expected = {81, 81, 81, 81,INVALID_SPEED,6,10};
+    expected = {81, 81, 81, 81, INVALID_SPEED, 6, 10};
     actual = map.getValues(nodes);
     BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
 
@@ -161,9 +161,9 @@ BOOST_AUTO_TEST_CASE(congestion_test_many_exceptions)
     BOOST_CHECK_THROW(map.getValue(86600998, 86620322), std::exception);
     BOOST_CHECK_THROW(map.getValue(86900074, 86900072), std::exception);
     BOOST_CHECK_THROW(map.getValue(207977101, 312122762), std::exception);
-    BOOST_CHECK_THROW(map.getValue(63395079,69402983), std::exception);
-    BOOST_CHECK_THROW(map.getValue(3560306483,1362215135), std::exception);
-    BOOST_CHECK_THROW(map.getValue(1362215135,297076455), std::exception);
+    BOOST_CHECK_THROW(map.getValue(63395079, 69402983), std::exception);
+    BOOST_CHECK_THROW(map.getValue(3560306483, 1362215135), std::exception);
+    BOOST_CHECK_THROW(map.getValue(1362215135, 297076455), std::exception);
 }
 
 BOOST_AUTO_TEST_CASE(congestion_test_get_values_exceptions)
