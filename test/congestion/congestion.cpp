@@ -149,6 +149,14 @@ BOOST_AUTO_TEST_CASE(congestion_test_not_a_number)
                       std::exception);
 }
 
+BOOST_AUTO_TEST_CASE(congestion_speeds_test_speed_greater_than_max)
+{
+    BOOST_CHECK_THROW(SegmentSpeedMap map("test/congestion/fixtures/congestion_speed_max.csv"),
+                      std::exception);
+    BOOST_CHECK_THROW(SegmentSpeedMap map("test/congestion/fixtures/congestion_speed_max2.csv"),
+                      std::exception);
+}
+
 BOOST_AUTO_TEST_CASE(congestion_test_many_exceptions)
 {
     SegmentSpeedMap map("test/congestion/fixtures/congestion.csv");

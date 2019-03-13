@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(way_speeds_load_incremental)
     WaySpeedMap map(paths);
 
     ways = {106817824, 231738435, 173681583, 45619838, 51369345, 171537086};
-    expected = {113, 64, 4294967295, 4294967295, 4294967295, 113};
+    expected = {113, 64, INVALID_SPEED, INVALID_SPEED, INVALID_SPEED, 113};
     actual = map.getValues(ways);
     BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
 
@@ -115,6 +115,12 @@ BOOST_AUTO_TEST_CASE(way_speeds_test_header)
 BOOST_AUTO_TEST_CASE(way_speeds_test_not_a_number)
 {
     BOOST_CHECK_THROW(WaySpeedMap map("test/wayspeeds/fixtures/not_a_number.csv"),
+                      std::exception);
+}
+
+BOOST_AUTO_TEST_CASE(way_speeds_test_speed_greater_than_max)
+{
+    BOOST_CHECK_THROW(WaySpeedMap map("test/wayspeeds/fixtures/way_speed_max.csv"),
                       std::exception);
 }
 
