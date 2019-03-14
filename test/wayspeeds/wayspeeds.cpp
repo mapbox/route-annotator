@@ -76,6 +76,22 @@ BOOST_AUTO_TEST_CASE(way_speeds_load_incremental)
     BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
 }
 
+BOOST_AUTO_TEST_CASE(way_speeds_test_speed_greater_than_max)
+{
+    std::vector<std::string> paths = {"test/wayspeeds/fixtures/way_speed_max.csv"};
+    WaySpeedMap map(paths);
+
+    std::vector<wayid_t> ways = {172938031,172938030};
+    std::vector<segment_speed_t> expected = {159,INVALID_SPEED};
+    std::vector<segment_speed_t> actual = map.getValues(ways);
+    BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
+
+    map.loadCSV("test/wayspeeds/fixtures/way_speed_max2.csv");
+    expected = {159, INVALID_SPEED}; //first import was not overwritten.
+    actual = map.getValues(ways);
+    BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
+}
+
 // Execptions
 BOOST_AUTO_TEST_CASE(way_speeds_test_string_input)
 {
@@ -115,12 +131,6 @@ BOOST_AUTO_TEST_CASE(way_speeds_test_header)
 BOOST_AUTO_TEST_CASE(way_speeds_test_not_a_number)
 {
     BOOST_CHECK_THROW(WaySpeedMap map("test/wayspeeds/fixtures/not_a_number.csv"),
-                      std::exception);
-}
-
-BOOST_AUTO_TEST_CASE(way_speeds_test_speed_greater_than_max)
-{
-    BOOST_CHECK_THROW(WaySpeedMap map("test/wayspeeds/fixtures/way_speed_max.csv"),
                       std::exception);
 }
 
