@@ -64,20 +64,24 @@ void SegmentSpeedMap::add_with_unit(const external_nodeid_t &from,
 
         if (s > INVALID_SPEED - 1)
         {
-            std::cout << "CSV parsing failed.  From Node: " << std::to_string(from) <<
-                                     " To Node: " << std::to_string(to) << " Speed: " <<
-                                     std::to_string(s) << std::endl;
-        } else annotations[Segment(from, to)] = s;
+            std::cout << "CSV parsing failed.  From Node: " << std::to_string(from)
+                      << " To Node: " << std::to_string(to) << " Speed: " << std::to_string(s)
+                      << std::endl;
+        }
+        else
+            annotations[Segment(from, to)] = s;
     }
     else
     {
 
         if (speed > INVALID_SPEED - 1)
         {
-            std::cout << "CSV parsing failed.  From Node: " << std::to_string(from) <<
-                                     " To Node: " << std::to_string(to) << " Speed: " <<
-                                     std::to_string(speed) << std::endl;
-        } else annotations[Segment(from, to)] = speed;
+            std::cout << "CSV parsing failed.  From Node: " << std::to_string(from)
+                      << " To Node: " << std::to_string(to) << " Speed: " << std::to_string(speed)
+                      << std::endl;
+        }
+        else
+            annotations[Segment(from, to)] = speed;
     }
 }
 
@@ -87,9 +91,9 @@ void SegmentSpeedMap::add(const external_nodeid_t &from,
 {
     if (speed > INVALID_SPEED - 1)
     {
-        std::cout << " CSV parsing failed.  From Node: " << std::to_string(from) <<
-                                 " To Node: " << std::to_string(to) << " Speed: " <<
-                                 std::to_string(speed) << std::endl;
+        std::cout << " CSV parsing failed.  From Node: " << std::to_string(from)
+                  << " To Node: " << std::to_string(to) << " Speed: " << std::to_string(speed)
+                  << std::endl;
         return;
     }
 

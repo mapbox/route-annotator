@@ -99,13 +99,13 @@ BOOST_AUTO_TEST_CASE(congestion_speeds_test_speed_greater_than_max)
     std::vector<std::string> paths = {"test/congestion/fixtures/congestion_speed_max.csv"};
     SegmentSpeedMap map(paths);
 
-    std::vector<external_nodeid_t> nodes = {6909081,86909079,69402983};
-    std::vector<segment_speed_t> expected = {159,INVALID_SPEED};
+    std::vector<external_nodeid_t> nodes = {6909081, 86909079, 69402983};
+    std::vector<segment_speed_t> expected = {159, INVALID_SPEED};
     std::vector<segment_speed_t> actual = map.getValues(nodes);
     BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
 
     map.loadCSV("test/congestion/fixtures/congestion_speed_max2.csv");
-    expected = {159, INVALID_SPEED}; //first import was not overwritten.
+    expected = {159, INVALID_SPEED}; // first import was not overwritten.
     actual = map.getValues(nodes);
     BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
 }
