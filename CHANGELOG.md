@@ -2,8 +2,8 @@
 
 ## Unreleased
 
-## 0.2.2-dev.1
-- Added support units in SegmentSpeedMap.  Data can be in the format of `NODE_A,NODE_B,UNIT,MAXSPEED` or `NODE_A,NODE_B,MAXSPEED`.  If units are expected, then all speed is coverted to kph.  If the unit is blank, it is assumed that the speed is in kph.  Added a limit to speeds.  We now will write out an error if > (invalid_speed - 1).  Changed segment_speed_t to uint8_t.
+## 0.2.2-dev.3
+- Added support units in SegmentSpeedMap.  Data can be in the format of `NODE_A,NODE_B,UNIT,MAXSPEED` or `NODE_A,NODE_B,MAXSPEED`.  If units are expected, then all speed is coverted to kph.  If the unit is blank, it is assumed that the speed is in kph.  Added a limit to speeds.  We now will write out an error if > (invalid_speed - 1).  Changed segment_speed_t to uint8_t.  Added logic to convert mph to kph for maxspeed tag for OSM data.
 
 ## 0.2.1
 - If tag is not found, filter by certain highway types by default.  (i.e., always add routable ways even though the requested tags don't exist.)
