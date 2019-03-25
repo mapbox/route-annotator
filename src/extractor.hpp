@@ -43,6 +43,14 @@ struct Extractor final : osmium::handler::Handler
     Extractor(const char *buffer, std::size_t buffersize, const std::string &format, Database &d);
 
     /**
+     * Collect all the digits in the string until we hit a non-numeric value.
+     *
+     * @param value the value that needs to be processed.
+     * @return a string containing only digits.
+     */
+    std::string get_digits(const std::string &value);
+
+    /**
      * Osmium way handler - called once for each way.
      *
      * @param way the current way being processed

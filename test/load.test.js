@@ -378,7 +378,7 @@ test('SegmentSpeedLookup: lookup with various invalid parameters', function(t) {
 test('SegmentSpeedLookup: lookup node pair', function(t) {
   segmentmap.getRouteSpeeds([86909066,86909064,86909066,999], (err, resp)=> {
     if (err) { console.log(err); throw err; }
-    t.same(resp, [79,80,4294967295], "Verify expected speed results");
+    t.same(resp, [79,80,255], "Verify expected speed results");
     t.end();
   });
 });
@@ -404,7 +404,7 @@ test('SegmentSpeedLookup: dont load CSV and see if you get the correct response 
   var speedlookup = new bindings.SegmentSpeedLookup();
   speedlookup.getRouteSpeeds([90,91,92,93], (err, resp)=> {
     if (err) { console.log(err); throw err; }
-    t.same(resp, [ 4294967295, 4294967295, 4294967295 ], "Verify expected speed results");
+    t.same(resp, [ 255, 255, 255 ], "Verify expected speed results");
     t.end();
   });
 });
@@ -608,7 +608,7 @@ test('WaySpeedLookup: lookup with various invalid parameters', function(t) {
 test('WaySpeedLookup: lookup ways', function(t) {
 	waymap.getRouteSpeeds([301595694,165499294,106817824,999], (err, resp)=> {
     if (err) { console.log(err); throw err; }
-    t.same(resp, [30,70,113,4294967295], "Verify expected speed results");
+    t.same(resp, [30,70,113,255], "Verify expected speed results");
     t.end();
   });
 });
@@ -616,7 +616,7 @@ test('WaySpeedLookup: lookup ways', function(t) {
 test('WaySpeedLookup: lookup ways from second file', function(t) {
 	waymap.getRouteSpeeds([45619838,173681583,171537086,999], (err, resp)=> {
     if (err) { console.log(err); throw err; }
-    t.same(resp, [65,19,97,4294967295], "Verify expected speed results");
+    t.same(resp, [65,19,97,255], "Verify expected speed results");
     t.end();
   });
 });
@@ -634,7 +634,7 @@ test('WaySpeedLookup: dont load CSV and see if you get the correct response (4 I
   var waylookup = new bindings.WaySpeedLookup();
   waylookup.getRouteSpeeds([6697274,11714049,6663351,6670232], (err, resp)=> {
     if (err) { console.log(err); throw err; }
-    t.same(resp, [ 4294967295, 4294967295, 4294967295, 4294967295 ], "Verify expected speed results");
+    t.same(resp, [ 255, 255, 255, 255 ], "Verify expected speed results");
     t.end();
   });
 });

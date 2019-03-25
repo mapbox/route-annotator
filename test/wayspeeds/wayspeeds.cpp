@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(way_speeds_load_incremental)
     WaySpeedMap map(paths);
 
     ways = {106817824, 231738435, 173681583, 45619838, 51369345, 171537086};
-    expected = {113, 64, 4294967295, 4294967295, 4294967295, 113};
+    expected = {113, 64, INVALID_SPEED, INVALID_SPEED, INVALID_SPEED, 113};
     actual = map.getValues(ways);
     BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
 
@@ -73,6 +73,22 @@ BOOST_AUTO_TEST_CASE(way_speeds_load_incremental)
     expected = {113, 64, 19, 65, 129, 97};
     actual = map.getValues(ways);
 
+    BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
+}
+
+BOOST_AUTO_TEST_CASE(way_speeds_test_speed_greater_than_max)
+{
+    std::vector<std::string> paths = {"test/wayspeeds/fixtures/way_speed_max.csv"};
+    WaySpeedMap map(paths);
+
+    std::vector<wayid_t> ways = {172938031,172938030};
+    std::vector<segment_speed_t> expected = {159,INVALID_SPEED};
+    std::vector<segment_speed_t> actual = map.getValues(ways);
+    BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
+
+    map.loadCSV("test/wayspeeds/fixtures/way_speed_max2.csv");
+    expected = {159, INVALID_SPEED}; //first import was not overwritten.
+    actual = map.getValues(ways);
     BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
 }
 

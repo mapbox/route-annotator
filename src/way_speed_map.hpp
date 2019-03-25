@@ -36,7 +36,7 @@ class WaySpeedMap
     /**
      * Adds a single way, speed key value pair
      */
-    inline void add(const wayid_t &way, const bool &mph, const segment_speed_t &speed);
+    inline void add(const wayid_t &way, const bool &mph, const std::uint32_t &speed);
 
     /**
      * Checks if a way exists in the map
