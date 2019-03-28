@@ -203,7 +203,7 @@ void Extractor::way(const osmium::Way &way)
                         if (value.find("mph") != std::string::npos)
                         {
                             uint32_t speed = stoi(digits);
-                            std::uint32_t s = std::round(speed * 1.609);
+                            std::uint32_t s = std::round(speed * kKmPerMile);
                             digits = std::to_string(s);
                         }
                         const auto key_pos = db.addstring(tag.key());

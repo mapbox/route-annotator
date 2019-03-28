@@ -144,7 +144,7 @@ test('annotate by node on data filtered by tag', function(t) {
             annotator.getAllTagsForWayId(ids[0], (err, tags) => {
                 t.error(err, 'No error');
                 t.ok(tags.maxspeed, 'Has maxspeed tag');
-                t.equal(tags.maxspeed, '88', 'Got correct maxspeed');
+                t.equal(tags.maxspeed, '89', 'Got correct maxspeed');
                 t.equal(tags._way_id, '266323344', 'Got correct _way_id attribute on match');
             });
         });

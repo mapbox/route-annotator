@@ -60,7 +60,7 @@ void SegmentSpeedMap::add_with_unit(const external_nodeid_t &from,
 {
     if (mph)
     {
-        std::uint32_t s = std::round(speed * 1.609);
+        std::uint32_t s = std::round(speed * kKmPerMile);
 
         if (s > INVALID_SPEED - 1)
         {

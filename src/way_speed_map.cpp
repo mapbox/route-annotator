@@ -53,7 +53,7 @@ void WaySpeedMap::add(const wayid_t &way, const bool &mph, const std::uint32_t &
 
     if (mph)
     {
-        std::uint32_t s = std::round(speed * 1.609);
+        std::uint32_t s = std::round(speed * kKmPerMile);
 
         if (s > INVALID_SPEED - 1)
         {

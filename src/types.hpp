@@ -12,6 +12,8 @@ typedef std::uint32_t internal_nodeid_t;
 typedef std::uint32_t wayid_t;
 typedef std::uint8_t segment_speed_t;
 
+constexpr float kKmPerMile = 1.609344f;
+
 // Way ID, and whether it the node pair for it is stored forward or backward
 typedef struct
 {
