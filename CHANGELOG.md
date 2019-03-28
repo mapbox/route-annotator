@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.2.3
+- Rounding was off for coverting mph to kph.  For example, 55 mph was being converted to 88 and not 89.  We know multiply by 1.609344f and round.
+
 ## 0.2.2
 - Added support units in SegmentSpeedMap.  Data can be in the format of `NODE_A,NODE_B,UNIT,MAXSPEED` or `NODE_A,NODE_B,MAXSPEED`.  If units are expected, then all speed is coverted to kph.  If the unit is blank, it is assumed that the speed is in kph.  Added a limit to speeds.  We now will write out an error if > (invalid_speed - 1).  Changed segment_speed_t to uint8_t.  Added logic to convert mph to kph for maxspeed tag for OSM data.
 
