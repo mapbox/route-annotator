@@ -113,7 +113,9 @@ NAN_METHOD(SegmentSpeedLookup::loadCSV)
         void HandleOKCallback() override
         {
             Nan::HandleScope scope;
-            auto self = GetFromPersistent("self")->ToObject();
+            auto self = GetFromPersistent("self")
+                            ->ToObject(v8::Isolate::GetCurrent()->GetCurrentContext())
+                            .ToLocalChecked();
             auto *unwrapped = Nan::ObjectWrap::Unwrap<SegmentSpeedLookup>(self);
             swap(unwrapped->datamap, map);
             const constexpr auto argc = 1u;

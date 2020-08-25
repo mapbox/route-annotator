@@ -7,6 +7,8 @@
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/support_line_pos_iterator.hpp>
 
+#include <iostream>
+
 using spp::sparse_hash_map;
 
 SegmentSpeedMap::SegmentSpeedMap(){};
