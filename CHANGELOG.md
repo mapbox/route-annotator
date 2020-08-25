@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.3.0
+-  Upgrade bindings for Node 10; dependencies.
+
 ## 0.2.3
 - Rounding was off for coverting mph to kph.  For example, 55 mph was being converted to 88 and not 89.  We now multiply by 1.609344f and round.
 
