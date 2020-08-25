@@ -29,9 +29,16 @@ void SegmentSpeedMap::loadCSV(const std::string &input_filename)
     boost::iostreams::mapped_file_source mmap(input_filename);
     auto first = mmap.begin(), last = mmap.end();
     qi::parse(first, last,
-              -((qi::ulong_long >> ',' >> qi::ulong_long >> ',' >>
-                 qi::uint_)[ph::bind(&SegmentSpeedMap::add, this, qi::_1, qi::_2, qi::_3)] %
-                qi::eol) >>
+              (
+                  // parse data that does not have mph or kph data
+                  ((qi::ulong_long >> ',' >> qi::ulong_long >> ',' >>
+                    qi::uint_)[ph::bind(&SegmentSpeedMap::add, this, qi::_1, qi::_2, qi::_3)]) |
+                  // if the above fails, try to parse data checking for mph or kph.
+                  ((qi::ulong_long >> ',' >> qi::ulong_long >> ',' >>
+                    ("mph" >> qi::attr(true) | "kph" >> qi::attr(false) | "" >> qi::attr(false)) >>
+                    ',' >> qi::uint_)[ph::bind(&SegmentSpeedMap::add_with_unit, this, qi::_1,
+                                               qi::_2, qi::_4, qi::_3)])) %
+                      qi::eol >>
                   *qi::eol);
 
     if (first != last)
@@ -46,10 +53,50 @@ void SegmentSpeedMap::loadCSV(const std::string &input_filename)
     }
 }
 
+void SegmentSpeedMap::add_with_unit(const external_nodeid_t &from,
+                                    const external_nodeid_t &to,
+                                    const uint32_t &speed,
+                                    const bool &mph)
+{
+    if (mph)
+    {
+        std::uint32_t s = std::round(speed * kKmPerMile);
+
+        if (s > INVALID_SPEED - 1)
+        {
+            std::cout << "CSV parsing failed.  From Node: " << std::to_string(from)
+                      << " To Node: " << std::to_string(to) << " Speed: " << std::to_string(s)
+                      << std::endl;
+        }
+        else
+            annotations[Segment(from, to)] = s;
+    }
+    else
+    {
+
+        if (speed > INVALID_SPEED - 1)
+        {
+            std::cout << "CSV parsing failed.  From Node: " << std::to_string(from)
+                      << " To Node: " << std::to_string(to) << " Speed: " << std::to_string(speed)
+                      << std::endl;
+        }
+        else
+            annotations[Segment(from, to)] = speed;
+    }
+}
+
 void SegmentSpeedMap::add(const external_nodeid_t &from,
                           const external_nodeid_t &to,
-                          const segment_speed_t &speed)
+                          const std::uint32_t &speed)
 {
+    if (speed > INVALID_SPEED - 1)
+    {
+        std::cout << " CSV parsing failed.  From Node: " << std::to_string(from)
+                  << " To Node: " << std::to_string(to) << " Speed: " << std::to_string(speed)
+                  << std::endl;
+        return;
+    }
+
     annotations[Segment(from, to)] = speed;
 }
 

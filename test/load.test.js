@@ -1,7 +1,9 @@
 var test = require('tape');
 const bindings = require('../index');
 const annotator = new bindings.Annotator({ coordinates: true });
-const segmentmap = new bindings.SpeedLookup();
+const segmentmap = new bindings.SegmentSpeedLookup();
+const waymap = new bindings.WaySpeedLookup();
+
 const path = require('path');
 
 test('invalid initialization', (t) => {
@@ -230,45 +232,45 @@ test('invalid get tags parameters', (t) => {
 
 });
 
-test('initialization failure', function(t) {
-  t.throws(bindings.SpeedLookup, /Cannot call constructor/, "Check that lookup can't be constructed without new");
+test('SegmentSpeedLookup: initialization failure', function(t) {
+  t.throws(bindings.SegmentSpeedLookup, /Cannot call constructor/, "Check that lookup can't be constructed without new");
   t.end();
 });
 
-test('initialization failure with parameters', function(t) {
-  t.throws(function() { var foo = new bindings.SpeedLookup("test"); }, /No types expected/, "Check that lookup can't be constructed with parameters");
+test('SegmentSpeedLookup: initialization failure with parameters', function(t) {
+  t.throws(function() { var foo = new bindings.SegmentSpeedLookup("test"); }, /No types expected/, "Check that lookup can't be constructed with parameters");
   t.end();
 });
 
 
-test('check CSV loading', function(t) {
+test('SegmentSpeedLookup: check CSV loading', function(t) {
   t.throws(function(cb) { 
-    var foo = new bindings.SpeedLookup(); 
+    var foo = new bindings.SegmentSpeedLookup(); 
     foo.loadCSV(1,(err) => {cb(err);});
   }, /and callback expected/, "Only understands strings and arrays of strings");
 
   t.throws(function(cb) { 
-    var foo = new bindings.SpeedLookup(); 
+    var foo = new bindings.SegmentSpeedLookup(); 
     foo.loadCSV("testfile.csv");
   }, /and callback expected/, "Needs a callback function");
 
   t.throws(function(cb) { 
-    var foo = new bindings.SpeedLookup();
+    var foo = new bindings.SegmentSpeedLookup();
     foo.loadCSV([],(err) => {cb(err);});
   }, /at least one filename/, "Doesn't know what to do with an empty array");
   t.end();
 });
 
-test('missing single files', function(t) {
-  var foo = new bindings.SpeedLookup();
+test('SegmentSpeedLookup: missing single files', function(t) {
+  var foo = new bindings.SegmentSpeedLookup();
   foo.loadCSV("doesnotexist.csv",(err) => {
     t.ok(err, "Fails if the file does not exist");
     t.end();
   });
 });
 
-test('missing multifiles', function(t) {
-  var foo = new bindings.SpeedLookup();
+test('SegmentSpeedLookup: missing multifiles', function(t) {
+  var foo = new bindings.SegmentSpeedLookup();
   foo.loadCSV([path.join(__dirname,'congestion/fixtures/congestion.csv'),
                "doesnotexist.csv"],(err) => {
     t.ok(err, "Fails if any of the files in the list does not exist");
@@ -276,7 +278,7 @@ test('missing multifiles', function(t) {
   });
 });
 
-test('load invalid parameters', (t) => {
+test('SegmentSpeedLookup: load invalid parameters', (t) => {
   try {
       segmentmap.loadCSV(1234, (err) => {
         t.fail("Should never get here");;
@@ -302,7 +304,7 @@ test('load invalid parameters', (t) => {
 
 });
 
-test('load valid CSV', function(t) {
+test('SegmentSpeedLookup: load valid CSV', function(t) {
   segmentmap.loadCSV(
     [path.join(__dirname,'congestion/fixtures/congestion.csv'),
      path.join(__dirname,'congestion/fixtures/congestion2.csv')]
@@ -312,7 +314,7 @@ test('load valid CSV', function(t) {
   });
 });
 
-test('lookup with various invalid parameters', function(t) {
+test('SegmentSpeedLookup: lookup with various invalid parameters', function(t) {
   try {
     segmentmap.getRouteSpeeds([86909066], (err, resp)=> {
       t.fail("Should never get here");
@@ -373,15 +375,15 @@ test('lookup with various invalid parameters', function(t) {
 
 });
 
-test('lookup node pair', function(t) {
+test('SegmentSpeedLookup: lookup node pair', function(t) {
   segmentmap.getRouteSpeeds([86909066,86909064,86909066,999], (err, resp)=> {
     if (err) { console.log(err); throw err; }
-    t.same(resp, [79,80,4294967295], "Verify expected speed results");
+    t.same(resp, [79,80,255], "Verify expected speed results");
     t.end();
   });
 });
 
-test('lookup node pair from second file', function(t) {
+test('SegmentSpeedLookup: lookup node pair from second file', function(t) {
   segmentmap.getRouteSpeeds([90,91,92,93], (err, resp)=> {
     if (err) { console.log(err); throw err; }
     t.same(resp, [2,3,4], "Verify expected speed results");
@@ -389,8 +391,8 @@ test('lookup node pair from second file', function(t) {
   });
 });
 
-test('make sure that it works even if CSV is not loaded', function(t) {
-  var speedlookup = new bindings.SpeedLookup();
+test('SegmentSpeedLookup: make sure that it works even if CSV is not loaded', function(t) {
+  var speedlookup = new bindings.SegmentSpeedLookup();
   speedlookup.getRouteSpeeds([90,91,92,93], (err, resp)=> {
     if (err) { console.log(err); throw err; }
     t.ok(resp, "Return results even if CSV is not loaded");
@@ -398,11 +400,11 @@ test('make sure that it works even if CSV is not loaded', function(t) {
   });
 });
 
-test('dont load CSV and see if you get the correct response (4 INVALID_SPEEDs)', function(t) {
-  var speedlookup = new bindings.SpeedLookup();
+test('SegmentSpeedLookup: dont load CSV and see if you get the correct response (3 INVALID_SPEEDs)', function(t) {
+  var speedlookup = new bindings.SegmentSpeedLookup();
   speedlookup.getRouteSpeeds([90,91,92,93], (err, resp)=> {
     if (err) { console.log(err); throw err; }
-    t.same(resp, [ 4294967295, 4294967295, 4294967295 ], "Verify expected speed results");
+    t.same(resp, [ 255, 255, 255 ], "Verify expected speed results");
     t.end();
   });
 });
@@ -458,5 +460,181 @@ test('annotator without coordinates support - explicit', function(t) {
       t.ok(err, 'returns error when annotator not built with coordinates support');
       t.end();
     });
+  });
+});
+
+test('WaySpeedLookup: initialization failure', function(t) {
+  t.throws(bindings.WaySpeedLookup, /Cannot call constructor/, "Check that lookup can't be constructed without new");
+  t.end();
+});
+
+test('WaySpeedLookup: initialization failure with parameters', function(t) {
+  t.throws(function() { var foo = new bindings.WaySpeedLookup("test"); }, /No types expected/, "Check that lookup can't be constructed with parameters");
+  t.end();
+});
+
+test('WaySpeedLookup: check CSV loading', function(t) {
+  t.throws(function(cb) {
+    var foo = new bindings.WaySpeedLookup();
+    foo.loadCSV(1,(err) => {cb(err);});
+  }, /and callback expected/, "Only understands strings and arrays of strings");
+
+  t.throws(function(cb) {
+    var foo = new bindings.WaySpeedLookup();
+    foo.loadCSV("testfile.csv");
+  }, /and callback expected/, "Needs a callback function");
+
+  t.throws(function(cb) {
+    var foo = new bindings.WaySpeedLookup();
+    foo.loadCSV([],(err) => {cb(err);});
+  }, /at least one filename/, "Doesn't know what to do with an empty array");
+  t.end();
+});
+
+test('WaySpeedLookup: missing single files', function(t) {
+  var foo = new bindings.WaySpeedLookup();
+  foo.loadCSV("doesnotexist.csv",(err) => {
+    t.ok(err, "Fails if the file does not exist");
+    t.end();
+  });
+});
+
+test('WaySpeedLookup: missing multifiles', function(t) {
+  var foo = new bindings.WaySpeedLookup();
+  foo.loadCSV([path.join(__dirname,'wayspeeds/fixtures/way_speeds.csv'),
+               "doesnotexist.csv"],(err) => {
+    t.ok(err, "Fails if any of the files in the list does not exist");
+    t.end();
+  });
+});
+
+test('WaySpeedLookup: load invalid parameters', (t) => {
+  try {
+	  waymap.loadCSV(1234, (err) => {
+        t.fail("Should never get here");;
+        t.end();
+      });
+      t.fail("Should never get here");;
+  }
+  catch (err) {
+    t.ok(err, "Fails if the first parameter isn't a string or array");
+  }
+
+  try {
+	  waymap.loadCSV(1234, 1234, (err) => {
+        t.fail("Should never get here");;
+        t.end();
+      });
+      t.fail("Should never get here");;
+  }
+  catch (err) {
+    t.ok(err, "Fails if the second parameter isn't a function");
+    t.end();
+  }
+
+});
+
+test('WaySpeedLookup: load valid CSV', function(t) {
+	waymap.loadCSV(
+    [path.join(__dirname,'wayspeeds/fixtures/way_speeds.csv'),
+     path.join(__dirname,'wayspeeds/fixtures/way_speeds2.csv')]
+    , (err) => {
+    if (err) throw err;
+    t.end();
+  });
+});
+
+test('WaySpeedLookup: lookup with various invalid parameters', function(t) {
+  try {
+	  waymap.getRouteSpeeds([], (err, resp)=> {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if only one coordinate is passed");
+  }
+  try {
+	  waymap.getRouteSpeeds(15665879, (err, resp)=> {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if first param isn't an array");
+  }
+
+  try {
+	  waymap.getRouteSpeeds([301595694], 30, (err, resp)=> {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if more than 2 parameters passed");
+  }
+
+  try {
+	  waymap.getRouteSpeeds([301595694], 30);
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if second parameter isn't a function");
+  }
+
+  try {
+	  waymap.getRouteSpeeds([301595694,"asdfasdf"], (err, resp)=> {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if a value in the node list isn't a number");
+  }
+
+  try {
+	  waymap.getRouteSpeeds([301595694,-301595694], 30, (err, resp)=> {
+      t.fail("Should never get here");
+    });
+    t.fail("Should never get here");
+  }
+  catch (err) {
+    t.ok(err, "Should fail if a value in the node list is negative");
+    t.end();
+  }
+
+});
+
+test('WaySpeedLookup: lookup ways', function(t) {
+	waymap.getRouteSpeeds([301595694,165499294,106817824,999], (err, resp)=> {
+    if (err) { console.log(err); throw err; }
+    t.same(resp, [30,70,113,255], "Verify expected speed results");
+    t.end();
+  });
+});
+
+test('WaySpeedLookup: lookup ways from second file', function(t) {
+	waymap.getRouteSpeeds([45619838,173681583,171537086,999], (err, resp)=> {
+    if (err) { console.log(err); throw err; }
+    t.same(resp, [65,19,97,255], "Verify expected speed results");
+    t.end();
+  });
+});
+
+test('WaySpeedLookup: make sure that it works even if CSV is not loaded', function(t) {
+  var waylookup = new bindings.WaySpeedLookup();
+  waylookup.getRouteSpeeds([6697274,11714049,6663351,6670232], (err, resp)=> {
+    if (err) { console.log(err); throw err; }
+    t.ok(resp, "Return results even if CSV is not loaded");
+    t.end();
+  });
+});
+
+test('WaySpeedLookup: dont load CSV and see if you get the correct response (4 INVALID_SPEEDs)', function(t) {
+  var waylookup = new bindings.WaySpeedLookup();
+  waylookup.getRouteSpeeds([6697274,11714049,6663351,6670232], (err, resp)=> {
+    if (err) { console.log(err); throw err; }
+    t.same(resp, [ 255, 255, 255, 255 ], "Verify expected speed results");
+    t.end();
   });
 });

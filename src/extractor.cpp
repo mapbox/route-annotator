@@ -150,8 +150,31 @@ bool Extractor::FilterWay(const osmium::Way &way)
                 return true;
             }
         }
-        return false;
+        // if tag is not found, filter by certain highway types by default
+        const char *highway = way.tags().get_value_by_key("highway");
+        std::vector<const char *> highway_types = {
+            "motorway",     "motorway_link", "trunk",          "trunk_link", "primary",
+            "primary_link", "secondary",     "secondary_link", "tertiary",   "tertiary_link",
+            "residential",  "living_street", "unclassified",   "service",    "ferry",
+            "movable",      "shuttle_train", "default"};
+        return highway &&
+               std::any_of(highway_types.begin(), highway_types.end(),
+                           [&highway](const auto &way) { return std::strcmp(highway, way) == 0; });
     }
+}
+
+// get all the digits
+std::string Extractor::get_digits(const std::string &value)
+{
+    std::string digits;
+    for (auto it = value.cbegin(); it != value.cend(); ++it)
+    {
+        if (std::isdigit(*it))
+            digits += *it;
+        else
+            return digits;
+    }
+    return digits;
 }
 
 void Extractor::way(const osmium::Way &way)
@@ -171,9 +194,29 @@ void Extractor::way(const osmium::Way &way)
             // use this way if we find a tag that we're interested in
             if (tags_filter(tag))
             {
-                const auto key_pos = db.addstring(tag.key());
-                const auto val_pos = db.addstring(tag.value());
-                db.key_value_pairs.emplace_back(key_pos, val_pos);
+                if (std::string(tag.key()) == "maxspeed")
+                {
+                    std::string digits = get_digits(std::string(tag.value()));
+                    if (!digits.empty())
+                    {
+                        std::string value = std::string(tag.value());
+                        if (value.find("mph") != std::string::npos)
+                        {
+                            uint32_t speed = stoi(digits);
+                            std::uint32_t s = std::round(speed * kKmPerMile);
+                            digits = std::to_string(s);
+                        }
+                        const auto key_pos = db.addstring(tag.key());
+                        const auto val_pos = db.addstring(digits.c_str());
+                        db.key_value_pairs.emplace_back(key_pos, val_pos);
+                    }
+                }
+                else
+                {
+                    const auto key_pos = db.addstring(tag.key());
+                    const auto val_pos = db.addstring(tag.value());
+                    db.key_value_pairs.emplace_back(key_pos, val_pos);
+                }
             }
         }
 

@@ -66,10 +66,18 @@ class SegmentSpeedMap
     void loadCSV(const std::string &input_filename);
 
     /**
+     * Adds a single to/from pair value with support for unit.
+     */
+    inline void add_with_unit(const external_nodeid_t &from,
+                              const external_nodeid_t &to,
+                              const std::uint32_t &speed,
+                              const bool &mph);
+
+    /**
      * Adds a single to/from pair value
      */
     inline void
-    add(const external_nodeid_t &from, const external_nodeid_t &to, const segment_speed_t &speed);
+    add(const external_nodeid_t &from, const external_nodeid_t &to, const std::uint32_t &speed);
 
     /**
      * Checks if a pair of nodes exist together in the map

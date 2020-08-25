@@ -4,6 +4,7 @@ const async = require('async');
 
 const bindings = require('../index');
 const MONACO_FILE = path.join(__dirname,'data/monaco.extract.osm');
+const BALTIMORE_FILE = path.join(__dirname,'data/baltimore.osm.pbf');
 const TAGS_FILE = path.join(__dirname, 'data/tags'); // data/tags => 'maxspeed'
 
 test('loadOSMExtract errors', function(t) {
@@ -85,6 +86,7 @@ test('annotate by node on data filtered by tag', function(t) {
             annotator.getAllTagsForWayId(ids[0], (err, tags) => {
                 t.error(err, 'No error');
                 t.ok(tags.maxspeed, 'Has maxspeed tag');
+                t.equal(tags.maxspeed, '50', 'Got correct maxspeed');
                 t.equal(tags._way_id, '93091314', 'Got correct _way_id attribute on match');
             });
         });
@@ -112,3 +114,49 @@ test('annotate by node on data filtered by tag', function(t) {
         };
     });
 });
+
+test('annotate by node on data filtered by tag', function(t) {
+    const annotator = new bindings.Annotator();
+    // data/multiple-tags => 'maxspeed, tunnel'
+    annotator.loadOSMExtract(BALTIMORE_FILE, path.join(__dirname, 'data/multiple-tags'), (err) => {
+        t.error(err, 'Load monaco');
+        var q = async.queue((task, callback) => {
+            annotator.annotateRouteFromNodeIds(task.nodes, (err, wayIds) => {
+                t.error(err, 'No error annotating');
+                callback(wayIds);
+            });
+        });
+        // Get annotations with tags maxspeed
+        var NodesWithMaxspeed = {nodes: [49461073,2494188158]};
+        q.push(NodesWithMaxspeed, (ids) => {
+            t.equals(ids.length, 1, 'One way id returned');
+            annotator.getAllTagsForWayId(ids[0], (err, tags) => {
+                t.error(err, 'No error');
+                t.ok(tags.maxspeed, 'Has maxspeed tag');
+                t.equal(tags.maxspeed, '40', 'Got correct maxspeed');
+                t.equal(tags._way_id, '326116174', 'Got correct _way_id attribute on match');
+            });
+        });
+        // Get annotations with tags maxspeed
+        NodesWithMaxspeed = {nodes: [2719002521,2719002531]};
+        q.push(NodesWithMaxspeed, (ids) => {
+            t.equals(ids.length, 1, 'One way id returned');
+            annotator.getAllTagsForWayId(ids[0], (err, tags) => {
+                t.error(err, 'No error');
+                t.ok(tags.maxspeed, 'Has maxspeed tag');
+                t.equal(tags.maxspeed, '89', 'Got correct maxspeed');
+                t.equal(tags._way_id, '266323344', 'Got correct _way_id attribute on match');
+            });
+        });
+        // Get no annotations back
+        var NodesWithoutMaxspeedOrTunnel = {nodes: [25193333,1204288453,3854490634]};
+        q.push(NodesWithoutMaxspeedOrTunnel, (ids) => {
+            t.equals(ids.length, 2, 'One way id returned');
+            t.ok(ids.every(i => i == null), 'Way ids are null');
+        });
+        q.drain = () => {
+            t.end();
+        };
+    });
+});
+

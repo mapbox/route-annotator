@@ -85,7 +85,7 @@ struct Database
     std::vector<value_t> used_nodes_list;
 
     // A list of the OSM way IDs
-    std::vector<std::uint64_t> internal_to_external_way_id_map;
+    std::vector<wayid_t> internal_to_external_way_id_map;
 
   private:
     // The character data for all strings
