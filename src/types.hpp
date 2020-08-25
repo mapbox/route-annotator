@@ -66,4 +66,4 @@ template <> struct hash<internal_nodepair_t>
         return (static_cast<std::uint64_t>(v.first) << 32) + v.second;
     }
 };
-}
+} // namespace std

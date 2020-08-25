@@ -1,5 +1,7 @@
 #include "database.hpp"
 
+#include <iostream>
+
 Database::Database() {}
 Database::Database(bool _createRTree) : createRTree(_createRTree) {}
 

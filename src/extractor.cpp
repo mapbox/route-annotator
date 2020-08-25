@@ -19,6 +19,8 @@
 #include <boost/iterator/zip_iterator.hpp>
 #include <boost/tuple/tuple.hpp>
 
+#include <iostream>
+
 // Node indexing types for libosmium
 // We need these because we need access to the lon/lat for the noderefs inside the way
 // callback in our handler.

@@ -38,6 +38,9 @@
       'cflags': [
           '<@(system_includes)'
       ],
+      'defines': [
+          'BOOST_MATH_DISABLE_FLOAT128=1'
+      ],
       'xcode_settings': {
         'OTHER_CPLUSPLUSFLAGS': [
             '<@(system_includes)'
@@ -78,6 +81,9 @@
       ],
       'cflags': [
           '<@(system_includes)'
+      ],
+      'defines': [
+          'BOOST_MATH_DISABLE_FLOAT128=1'
       ],
       'ldflags': [
         '-Wl,-z,now',
@@ -121,6 +127,9 @@
       ],
       'cflags': [
           '<@(system_includes)'
+      ],
+      'defines': [
+          'BOOST_MATH_DISABLE_FLOAT128=1'
       ],
       'ldflags': [
         '-Wl,-z,now',
@@ -174,6 +183,9 @@
       'cflags': [
           '<@(system_includes)'
       ],
+      'defines': [
+          'BOOST_MATH_DISABLE_FLOAT128=1'
+      ],
       'ldflags': [
         '-Wl,-z,now',
       ],
@@ -223,6 +235,9 @@
       'cflags': [
           '<@(system_includes)'
       ],
+      'defines': [
+          'BOOST_MATH_DISABLE_FLOAT128=1'
+      ],
       'ldflags': [
         '-Wl,-z,now',
       ],
@@ -271,6 +286,9 @@
       ],
       'cflags': [
           '<@(system_includes)'
+      ],
+      'defines': [
+          'BOOST_MATH_DISABLE_FLOAT128=1'
       ],
       'ldflags': [
         '-Wl,-z,now',

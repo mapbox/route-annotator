@@ -109,7 +109,7 @@ NAN_METHOD(Annotator::loadOSMExtract)
                 "Expecting a string (or array of strings), a string, and a callback");
         }
         // convert tag file path into string
-        const v8::String::Utf8Value tag_utf8String(info[1]);
+        const v8::String::Utf8Value tag_utf8String(v8::Isolate::GetCurrent(), info[1]);
         if (!(*tag_utf8String))
             return Nan::ThrowError("Unable to convert to Utf8String");
 
@@ -118,7 +118,7 @@ NAN_METHOD(Annotator::loadOSMExtract)
     // Parse osm files into vector
     if (info[0]->IsString())
     {
-        const v8::String::Utf8Value osm_utf8String(info[0]);
+        const v8::String::Utf8Value osm_utf8String(v8::Isolate::GetCurrent(), info[0]);
         osm_paths.emplace_back(*osm_utf8String, osm_utf8String.length());
     }
     else if (info[0]->IsArray())
@@ -134,7 +134,7 @@ NAN_METHOD(Annotator::loadOSMExtract)
                 return Nan::ThrowError("Unable to convert file path to Utf8String");
             }
 
-            const v8::String::Utf8Value file{file_array->Get(idx)};
+            const v8::String::Utf8Value file{v8::Isolate::GetCurrent(), file_array->Get(idx)};
             if (!(*file))
                 return Nan::ThrowError("Unable to convert file path to Utf8String");
             osm_paths.emplace_back(*file, file.length());

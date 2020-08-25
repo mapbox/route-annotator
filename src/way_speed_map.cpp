@@ -1,5 +1,4 @@
 #include "way_speed_map.hpp"
-#include <cmath>
 #include <sparsepp/spp.h>
 
 #include <boost/fusion/adapted/std_pair.hpp>
@@ -7,6 +6,9 @@
 #include <boost/spirit/include/phoenix.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/support_line_pos_iterator.hpp>
+
+#include <cmath>
+#include <iostream>
 
 using spp::sparse_hash_map;
 
