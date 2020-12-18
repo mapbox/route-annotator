@@ -71,7 +71,7 @@ NAN_METHOD(WaySpeedLookup::loadCSV)
         }
         for (std::uint32_t idx = 0; idx < arr->Length(); ++idx)
         {
-            const Nan::Utf8String utf8String(arr->Get(idx));
+            const Nan::Utf8String utf8String(Nan::Get(arr, idx).ToLocalChecked());
 
             if (!(*utf8String))
                 return Nan::ThrowError("Unable to convert to Utf8String");
@@ -159,7 +159,7 @@ NAN_METHOD(WaySpeedLookup::getRouteSpeeds)
 
     for (uint32_t i = 0; i < jsWayIds->Length(); ++i)
     {
-        v8::Local<v8::Value> jsWayId = jsWayIds->Get(i);
+        v8::Local<v8::Value> jsWayId = Nan::Get(jsWayIds, i).ToLocalChecked();
         if (!jsWayId->IsNumber())
             return Nan::ThrowTypeError("WayIds must be an array of numbers");
         auto signedWayId = Nan::To<int32_t>(jsWayId).FromJust();
