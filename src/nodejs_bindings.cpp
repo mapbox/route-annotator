@@ -45,7 +45,7 @@ NAN_METHOD(Annotator::New)
             auto parsedCoords = tryParseCoordinates.ToLocalChecked();
             if (parsedCoords->IsBoolean())
             {
-                coordinates = parsedCoords->BooleanValue();
+                coordinates = Nan::To<bool>(parsedCoords).FromJust();
             }
             else
             {
@@ -128,13 +128,13 @@ NAN_METHOD(Annotator::loadOSMExtract)
             return Nan::ThrowTypeError("Input OSM files array can't be empty");
         for (std::uint32_t idx = 0; idx < file_array->Length(); ++idx)
         {
-            if (!file_array->Get(idx)->IsString())
+            if (!Nan::Get(file_array, idx).ToLocalChecked()->IsString())
             {
                 // TODO include the idx number in this error message
                 return Nan::ThrowError("Unable to convert file path to Utf8String");
             }
 
-            const v8::String::Utf8Value file{v8::Isolate::GetCurrent(), file_array->Get(idx)};
+            const v8::String::Utf8Value file{v8::Isolate::GetCurrent(), Nan::Get(file_array,idx).ToLocalChecked()};
             if (!(*file))
                 return Nan::ThrowError("Unable to convert file path to Utf8String");
             osm_paths.emplace_back(*file, file.length());
@@ -413,11 +413,11 @@ NAN_METHOD(Annotator::getAllTagsForWayId)
                 const auto key = self.annotator->get_tag_key(i);
                 const auto value = self.annotator->get_tag_value(i);
 
-                tags->Set(Nan::New(std::cref(key)).ToLocalChecked(),
-                          Nan::New(std::cref(value)).ToLocalChecked());
+                Nan::Set(tags, Nan::New(std::cref(key)).ToLocalChecked(),
+                         Nan::New(std::cref(value)).ToLocalChecked());
             }
 
-            tags->Set(Nan::New("_way_id").ToLocalChecked(),
+            Nan::Set(tags, Nan::New("_way_id").ToLocalChecked(),
                       Nan::New(std::to_string(self.annotator->get_external_way_id(wayId)))
                           .ToLocalChecked());
 

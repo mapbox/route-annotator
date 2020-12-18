@@ -71,7 +71,7 @@ NAN_METHOD(SegmentSpeedLookup::loadCSV)
         }
         for (std::uint32_t idx = 0; idx < arr->Length(); ++idx)
         {
-            const Nan::Utf8String utf8String(arr->Get(idx));
+            const Nan::Utf8String utf8String(Nan::Get(arr,idx).ToLocalChecked());
 
             if (!(*utf8String))
                 return Nan::ThrowError("Unable to convert to Utf8String");
@@ -159,7 +159,7 @@ NAN_METHOD(SegmentSpeedLookup::getRouteSpeeds)
 
     for (uint32_t i = 0; i < jsNodeIds->Length(); ++i)
     {
-        v8::Local<v8::Value> jsNodeId = jsNodeIds->Get(i);
+        v8::Local<v8::Value> jsNodeId = Nan::Get(jsNodeIds, i).ToLocalChecked();
         if (!jsNodeId->IsNumber())
             return Nan::ThrowTypeError("NodeIds must be an array of numbers");
         auto signedNodeId = Nan::To<int64_t>(jsNodeId).FromJust();
