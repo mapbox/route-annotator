@@ -44,23 +44,23 @@ script:
 # run your tests and build binaries
 matrix:
   include:
-    # linux publishable node v10
+    # linux publishable node v14
     - os: linux
       env: BUILDTYPE=release
-      node_js: 10
-    # linux publishable node v10/debug
+      node_js: 14
+    # linux publishable node v14/debug
     - os: linux
       env: BUILDTYPE=debug
-      node_js: 10
-    # osx publishable node v10
+      node_js: 14
+    # osx publishable node v14
     - os: osx
       osx_image: xcode12
       env: BUILDTYPE=release
-      node_js: 10
+      node_js: 14
     # Sanitizer build node v4/Debug
     - os: linux
       env: BUILDTYPE=debug TOOLSET=asan
-      node_js: 10
+      node_js: 14
       # Overrides `install` to set up custom asan flags
       install:
         - ./scripts/setup.sh --config local.env
@@ -80,7 +80,7 @@ matrix:
     # g++ build (default builds all use clang++)
     - os: linux
       env: BUILDTYPE=debug CXX="g++-6" CC="gcc-6"
-      node_js: 10
+      node_js: 14
       addons:
         apt:
           sources:
@@ -100,7 +100,7 @@ matrix:
     # Coverage build
     - os: linux
       env: BUILDTYPE=debug CXXFLAGS="--coverage" LDFLAGS="--coverage"
-      node_js: 10
+      node_js: 14
       # Overrides `script` to publish coverage data to codecov
       before_script:
         - ./scripts/format.sh
