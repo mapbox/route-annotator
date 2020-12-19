@@ -24,7 +24,7 @@ install:
   - which node
   - clang++ -v
   - which clang++
-  - npm install --ignore-scripts
+  - npm ci --ignore-scripts
   - make ${BUILDTYPE}
 
 # run tests
@@ -70,6 +70,7 @@ matrix:
         # You might want to do this if there are multiple errors and you want to see them all before fixing
         - export CXXFLAGS="${MASON_SANITIZE_CXXFLAGS} -fno-sanitize-recover=all"
         - export LDFLAGS="${MASON_SANITIZE_LDFLAGS}"
+        - npm ci --ignore-scripts
         - make ${BUILDTYPE}
       # Overrides `script` to disable asan LD_PRELOAD before publishing
       before_script:
@@ -90,7 +91,7 @@ matrix:
             - g++-6
       # Overrides `install` to avoid initializing clang toolchain
       install:
-        - npm install --ignore-scripts
+        - npm ci --ignore-scripts
         - make ${BUILDTYPE}
         - make test-${BUILDTYPE}
       # Overrides `script` to disable publishing
