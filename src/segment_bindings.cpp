@@ -71,7 +71,7 @@ NAN_METHOD(SegmentSpeedLookup::loadCSV)
         }
         for (std::uint32_t idx = 0; idx < arr->Length(); ++idx)
         {
-            const Nan::Utf8String utf8String(Nan::Get(arr,idx).ToLocalChecked());
+            const Nan::Utf8String utf8String(Nan::Get(arr, idx).ToLocalChecked());
 
             if (!(*utf8String))
                 return Nan::ThrowError("Unable to convert to Utf8String");

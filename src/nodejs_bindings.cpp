@@ -134,7 +134,8 @@ NAN_METHOD(Annotator::loadOSMExtract)
                 return Nan::ThrowError("Unable to convert file path to Utf8String");
             }
 
-            const v8::String::Utf8Value file{v8::Isolate::GetCurrent(), Nan::Get(file_array,idx).ToLocalChecked()};
+            const v8::String::Utf8Value file{v8::Isolate::GetCurrent(),
+                                             Nan::Get(file_array, idx).ToLocalChecked()};
             if (!(*file))
                 return Nan::ThrowError("Unable to convert file path to Utf8String");
             osm_paths.emplace_back(*file, file.length());
@@ -418,8 +419,8 @@ NAN_METHOD(Annotator::getAllTagsForWayId)
             }
 
             Nan::Set(tags, Nan::New("_way_id").ToLocalChecked(),
-                      Nan::New(std::to_string(self.annotator->get_external_way_id(wayId)))
-                          .ToLocalChecked());
+                     Nan::New(std::to_string(self.annotator->get_external_way_id(wayId)))
+                         .ToLocalChecked());
 
             const constexpr auto argc = 2u;
             v8::Local<v8::Value> argv[argc] = {Nan::Null(), tags};
