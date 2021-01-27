@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.4.0
+- Upgrade bindings for Node 12, 14
+
 ## 0.3.0
 -  Upgrade bindings for Node 10; dependencies.
 

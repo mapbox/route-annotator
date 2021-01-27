@@ -156,7 +156,7 @@ _You must be a member of the Mapbox npm organization to do this!_
 
 - `git checkout master`
 - Update CHANGELOG.md
-- Bump version in package.json
+- Bump version in package.json, package-lock.json
 - `git commit -am "vx.y.z [publish binary] | [republish binary]"` with Changelog list in commit message
 - Wait for Travis to finish publishing binaries so that all travis tests pass for the publish binary commit.
 - `git tag vx.y.z -a` with Changelog list in tag message
