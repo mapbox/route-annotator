@@ -1,0 +1,2 @@
+# Ignore ASAN problems coming from within nodejs itself
+leak:bin/node
