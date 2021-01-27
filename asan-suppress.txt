@@ -1,2 +1,2 @@
-# Ignore ASAN problems coming from within nodejs itself
-leak:bin/node
+# Ignore ASAN problems coming from specific functions inside nodejs
+leak:LoadBuiltinModuleSource
