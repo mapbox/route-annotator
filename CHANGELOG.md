@@ -1,6 +1,8 @@
 # Route Annotator releases
 
 ## Unreleased
+## 0.4.1
+- Re-enable Node 10,12 builds that were mistakenly disabled in CI config
 
 ## 0.4.0
 - Upgrade bindings for Node 12, 14
