@@ -41,12 +41,6 @@ module.exports = {
         ]
       }
     },
-    AccessKey: {
-      Type: 'AWS::IAM::AccessKey',
-      Properties: {
-        UserName: cf.ref('User')
-      }
-    }
   },
   Outputs: {
     AccessKeyId: {
