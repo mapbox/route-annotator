@@ -55,6 +55,7 @@ The `Annotator()` object is for looking up OSM tag data from OSM node IDs or coo
 **Example:**
 ```
 var taglookup = new (require('@mapbox/route-annotator')).Annotator({ coordinates: true });
+var path = require('path');
 
 // Lookup some nodes and find out which ways they were on,
 // and what tags they had
