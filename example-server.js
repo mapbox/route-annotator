@@ -22,7 +22,7 @@ function main() {
     next();
   });
 
-  const annotator = new bindings.Annotator();
+  const annotator = new bindings.Annotator({ coordinates: true });
 
   app.get('/coordlist/:coordlist', coordListHandler(annotator));
   app.get('/nodelist/:nodelist', nodeListHandler(annotator));
