@@ -54,7 +54,7 @@ The `Annotator()` object is for looking up OSM tag data from OSM node IDs or coo
 
 **Example:**
 ```
-var taglookup = new (require('route_annotator')).Annotator();
+var taglookup = new (require('@mapbox/route-annotator')).Annotator({ coordinates: true });
 
 // Lookup some nodes and find out which ways they were on,
 // and what tags they had
@@ -63,7 +63,7 @@ taglookup.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
   var nodes = [50253600,50253602,50137292];
   taglookup.annotateRouteFromNodeIds(nodes, (err, wayIds) => {
     if (err) throw err;
-    annotator.getAllTagsForWayId(wayIds[0], (err, tags) => {
+    taglookup.getAllTagsForWayId(wayIds[0], (err, tags) => {
       if (err) throw err;
       console.log(tags);
     });
