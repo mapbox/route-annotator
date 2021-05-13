@@ -54,11 +54,12 @@ The `Annotator()` object is for looking up OSM tag data from OSM node IDs or coo
 
 **Example:**
 ```
-var taglookup = new (require('@mapbox/route-annotator')).Annotator({ coordinates: true });
+var Annotator = require('@mapbox/route-annotator');
 var path = require('path');
 
 // Lookup some nodes and find out which ways they were on,
 // and what tags they had
+var taglookup = new Annotator();
 taglookup.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
   if (err) throw err;
   var nodes = [50253600,50253602,50137292];
@@ -71,14 +72,14 @@ taglookup.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
   });
 });
 
-
+var annotator = new Annotator({ coordinates: true });
 // Do the same thing, but this time use coordinates instead
 // of node ids.  Internally, a radius search finds the closest
 // node within 5m
-taglookup.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
+annotator.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
   if (err) throw err;
   var coords = [[-120.1872774,48.4715898],[-120.1882910,48.4725110]];
-  taglookup.annotateRouteFromLonLats(coords, (err, wayIds) => {
+  annotator.annotateRouteFromLonLats(coords, (err, wayIds) => {
     if (err) throw err;
     annotator.getAllTagsForWayId(wayIds[0], (err, tags) => {
       if (err) throw err;
