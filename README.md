@@ -63,7 +63,7 @@ taglookup.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
   var nodes = [50253600,50253602,50137292];
   taglookup.annotateRouteFromNodeIds(nodes, (err, wayIds) => {
     if (err) throw err;
-    annotator.getAllTagsForWayId(wayIds[0], (err, tags) => {
+    taglookup.getAllTagsForWayId(wayIds[0], (err, tags) => {
       if (err) throw err;
       console.log(tags);
     });
@@ -79,7 +79,7 @@ taglookup.loadOSMExtract(path.join(__dirname,'data/winthrop.osm'), (err) => {
   var coords = [[-120.1872774,48.4715898],[-120.1882910,48.4725110]];
   taglookup.annotateRouteFromLonLats(coords, (err, wayIds) => {
     if (err) throw err;
-    annotator.getAllTagsForWayId(wayIds[0], (err, tags) => {
+    taglookup.getAllTagsForWayId(wayIds[0], (err, tags) => {
       if (err) throw err;
       console.log(tags);
     });
